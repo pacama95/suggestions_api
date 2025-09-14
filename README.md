@@ -259,4 +259,5 @@ Error responses include descriptive messages:
 
 ## License
 
-This project is licensed under the MIT License.
+© 2025 Pablo Cazorla. All rights reserved.
+This code is proprietary and confidential.
