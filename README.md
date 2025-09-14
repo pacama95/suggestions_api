@@ -124,7 +124,7 @@ The API provides both JVM and Native compilation modes:
 ### **Native Image** (Recommended for Production)
 ```bash
 # Build native image
-docker build -f Dockerfile.native -t suggestions-api:native .
+docker build -f Dockerfile -t suggestions-api:native .
 
 # Run native container
 docker run -i --rm -p 8080:8080 suggestions-api:native
