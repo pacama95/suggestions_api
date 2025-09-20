@@ -1,0 +1,45 @@
+# Docker Compose for development setup with PostgreSQL
+
+version: '3.8'
+
+services:
+  suggestions-postgresql:
+    image: postgres:15-alpine
+    container_name: suggestions-postgres
+    environment:
+      POSTGRES_DB: suggestions_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: suggestions_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - suggestions_postgres_data:/var/lib/postgresql/data
+    networks:
+      - suggestions-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d suggestions_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  suggestions-adminer:
+    image: adminer:4.8.1
+    container_name: suggestions-adminer
+    ports:
+      - "8084:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: suggestions-postgresql
+      ADMINER_DESIGN: pepa-linha
+    networks:
+      - suggestions-network
+    depends_on:
+      - suggestions-postgresql
+    restart: unless-stopped
+
+volumes:
+  suggestions_postgres_data:
+
+networks:
+  suggestions-network:
+    driver: bridge

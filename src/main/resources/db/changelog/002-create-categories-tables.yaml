@@ -1,0 +1,875 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-stock-types-table
+      author: portfolio-management
+      comment: Create stock_types table for categorizing different stock types
+      changes:
+        - createTable:
+            tableName: stock_types
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 002-create-stock_types-sequence
+      author: system
+      comment: Create sequence for stock_types table ID generation compatible with Hibernate
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE IF NOT EXISTS stock_types_seq START 1 INCREMENT 1;
+              SELECT setval('stock_types_seq', COALESCE(MAX(id), 1)) FROM stock_types;
+
+  - changeSet:
+      id: 002-create-currencies-table
+      author: portfolio-management
+      comment: Create currencies table for supported trading currencies
+      changes:
+        - createTable:
+            tableName: currencies
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: symbol
+                  type: VARCHAR(10)
+              - column:
+                  name: country_code
+                  type: VARCHAR(10)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-create-currencies-sequence
+      author: system
+      comment: Create sequence for currencies table ID generation compatible with Hibernate
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE IF NOT EXISTS currencies_seq START 1 INCREMENT 1;
+              SELECT setval('currencies_seq', COALESCE(MAX(id), 1)) FROM currencies;
+
+  - changeSet:
+      id: 002-create-exchanges-table
+      author: portfolio-management
+      comment: Create exchanges table for stock exchanges
+      changes:
+        - createTable:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: country
+                  type: VARCHAR(100)
+              - column:
+                  name: timezone
+                  type: VARCHAR(50)
+              - column:
+                  name: currency_code
+                  type: VARCHAR(10)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-create-exchanges-sequence
+      author: system
+      comment: Create sequence for exchanges table ID generation compatible with Hibernate
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE IF NOT EXISTS exchanges_seq START 1 INCREMENT 1;
+              SELECT setval('exchanges_seq', COALESCE(MAX(id), 1)) FROM exchanges;
+
+  - changeSet:
+      id: 002-insert-stock-types-data
+      author: portfolio-management
+      comment: Insert popular stock types
+      changes:
+        - insert:
+            tableName: stock_types
+            columns:
+              - column:
+                  name: code
+                  value: "COMMON_STOCK"
+              - column:
+                  name: name
+                  value: "Common Stock"
+              - column:
+                  name: description
+                  value: "Ordinary shares representing ownership in a company"
+        - insert:
+            tableName: stock_types
+            columns:
+              - column:
+                  name: code
+                  value: "ADR"
+              - column:
+                  name: name
+                  value: "American Depositary Receipt"
+              - column:
+                  name: description
+                  value: "Securities that represent shares in foreign companies traded on US markets"
+        - insert:
+            tableName: stock_types
+            columns:
+              - column:
+                  name: code
+                  value: "REIT"
+              - column:
+                  name: name
+                  value: "REIT"
+              - column:
+                  name: description
+                  value: "Real Estate Investment Trust - companies that own, operate or finance income-generating real estate"
+        - insert:
+            tableName: stock_types
+            columns:
+              - column:
+                  name: code
+                  value: "ETF"
+              - column:
+                  name: name
+                  value: "ETF"
+              - column:
+                  name: description
+                  value: "Exchange-Traded Fund - investment fund traded on stock exchanges like stocks"
+
+  - changeSet:
+      id: 002-insert-currencies-data
+      author: portfolio-management
+      comment: Insert top 10 most popular currencies
+      changes:
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "EUR"
+              - column:
+                  name: name
+                  value: "Euro"
+              - column:
+                  name: symbol
+                  value: "€"
+              - column:
+                  name: country_code
+                  value: "EU"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "USD"
+              - column:
+                  name: name
+                  value: "US Dollar"
+              - column:
+                  name: symbol
+                  value: "$"
+              - column:
+                  name: country_code
+                  value: "US"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "TWD"
+              - column:
+                  name: name
+                  value: "Taiwan Dollar"
+              - column:
+                  name: symbol
+                  value: "NT$"
+              - column:
+                  name: country_code
+                  value: "TW"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "HKD"
+              - column:
+                  name: name
+                  value: "Hong Kong Dollar"
+              - column:
+                  name: symbol
+                  value: "HK$"
+              - column:
+                  name: country_code
+                  value: "HK"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "INR"
+              - column:
+                  name: name
+                  value: "Indian Rupee"
+              - column:
+                  name: symbol
+                  value: "₹"
+              - column:
+                  name: country_code
+                  value: "IN"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "CNY"
+              - column:
+                  name: name
+                  value: "Chinese Yuan"
+              - column:
+                  name: symbol
+                  value: "¥"
+              - column:
+                  name: country_code
+                  value: "CN"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "CAD"
+              - column:
+                  name: name
+                  value: "Canadian Dollar"
+              - column:
+                  name: symbol
+                  value: "C$"
+              - column:
+                  name: country_code
+                  value: "CA"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "AUD"
+              - column:
+                  name: name
+                  value: "Australian Dollar"
+              - column:
+                  name: symbol
+                  value: "A$"
+              - column:
+                  name: country_code
+                  value: "AU"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "JPY"
+              - column:
+                  name: name
+                  value: "Japanese Yen"
+              - column:
+                  name: symbol
+                  value: "¥"
+              - column:
+                  name: country_code
+                  value: "JP"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "KRW"
+              - column:
+                  name: name
+                  value: "South Korean Won"
+              - column:
+                  name: symbol
+                  value: "₩"
+              - column:
+                  name: country_code
+                  value: "KR"
+
+  - changeSet:
+      id: 002-insert-exchanges-data
+      author: portfolio-management
+      comment: Insert top 30 most popular exchanges
+      changes:
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "XSTU"
+              - column:
+                  name: name
+                  value: "Stuttgart Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "TWSE"
+              - column:
+                  name: name
+                  value: "Taiwan Stock Exchange"
+              - column:
+                  name: country
+                  value: "Taiwan"
+              - column:
+                  name: currency_code
+                  value: "TWD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "Munich"
+              - column:
+                  name: name
+                  value: "Munich Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "XDUS"
+              - column:
+                  name: name
+                  value: "Düsseldorf Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "FSX"
+              - column:
+                  name: name
+                  value: "Frankfurt Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "XBER"
+              - column:
+                  name: name
+                  value: "Berlin Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "OTC"
+              - column:
+                  name: name
+                  value: "Over-the-Counter Markets"
+              - column:
+                  name: country
+                  value: "United States"
+              - column:
+                  name: currency_code
+                  value: "USD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "HKEX"
+              - column:
+                  name: name
+                  value: "Hong Kong Stock Exchange"
+              - column:
+                  name: country
+                  value: "Hong Kong"
+              - column:
+                  name: currency_code
+                  value: "HKD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "MTA"
+              - column:
+                  name: name
+                  value: "Mercato Telematico Azionario"
+              - column:
+                  name: country
+                  value: "Italy"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "VSE"
+              - column:
+                  name: name
+                  value: "Vienna Stock Exchange"
+              - column:
+                  name: country
+                  value: "Austria"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "LSE"
+              - column:
+                  name: name
+                  value: "London Stock Exchange"
+              - column:
+                  name: country
+                  value: "United Kingdom"
+              - column:
+                  name: currency_code
+                  value: "GBP"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "XHAN"
+              - column:
+                  name: name
+                  value: "Hamburg Stock Exchange"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "BSE"
+              - column:
+                  name: name
+                  value: "Bombay Stock Exchange"
+              - column:
+                  name: country
+                  value: "India"
+              - column:
+                  name: currency_code
+                  value: "INR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "NASDAQ"
+              - column:
+                  name: name
+                  value: "NASDAQ"
+              - column:
+                  name: country
+                  value: "United States"
+              - column:
+                  name: currency_code
+                  value: "USD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "JPX"
+              - column:
+                  name: name
+                  value: "Japan Exchange Group"
+              - column:
+                  name: country
+                  value: "Japan"
+              - column:
+                  name: currency_code
+                  value: "JPY"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "SZSE"
+              - column:
+                  name: name
+                  value: "Shenzhen Stock Exchange"
+              - column:
+                  name: country
+                  value: "China"
+              - column:
+                  name: currency_code
+                  value: "CNY"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "NSE"
+              - column:
+                  name: name
+                  value: "National Stock Exchange of India"
+              - column:
+                  name: country
+                  value: "India"
+              - column:
+                  name: currency_code
+                  value: "INR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "SSE"
+              - column:
+                  name: name
+                  value: "Shanghai Stock Exchange"
+              - column:
+                  name: country
+                  value: "China"
+              - column:
+                  name: currency_code
+                  value: "CNY"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "NYSE"
+              - column:
+                  name: name
+                  value: "New York Stock Exchange"
+              - column:
+                  name: country
+                  value: "United States"
+              - column:
+                  name: currency_code
+                  value: "USD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "KRX"
+              - column:
+                  name: name
+                  value: "Korea Exchange"
+              - column:
+                  name: country
+                  value: "South Korea"
+              - column:
+                  name: currency_code
+                  value: "KRW"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "Bovespa"
+              - column:
+                  name: name
+                  value: "B3 (Brasil Bolsa Balcão)"
+              - column:
+                  name: country
+                  value: "Brazil"
+              - column:
+                  name: currency_code
+                  value: "BRL"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "NEO"
+              - column:
+                  name: name
+                  value: "NEO Exchange"
+              - column:
+                  name: country
+                  value: "Canada"
+              - column:
+                  name: currency_code
+                  value: "CAD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "ASX"
+              - column:
+                  name: name
+                  value: "Australian Securities Exchange"
+              - column:
+                  name: country
+                  value: "Australia"
+              - column:
+                  name: currency_code
+                  value: "AUD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "Euronext"
+              - column:
+                  name: name
+                  value: "Euronext"
+              - column:
+                  name: country
+                  value: "Europe"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "SET"
+              - column:
+                  name: name
+                  value: "Stock Exchange of Thailand"
+              - column:
+                  name: country
+                  value: "Thailand"
+              - column:
+                  name: currency_code
+                  value: "THB"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "CXA"
+              - column:
+                  name: name
+                  value: "Canadian Securities Exchange"
+              - column:
+                  name: country
+                  value: "Canada"
+              - column:
+                  name: currency_code
+                  value: "CAD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "TSXV"
+              - column:
+                  name: name
+                  value: "TSX Venture Exchange"
+              - column:
+                  name: country
+                  value: "Canada"
+              - column:
+                  name: currency_code
+                  value: "CAD"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "OMX"
+              - column:
+                  name: name
+                  value: "Nasdaq Nordic"
+              - column:
+                  name: country
+                  value: "Nordic"
+              - column:
+                  name: currency_code
+                  value: "SEK"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "XETR"
+              - column:
+                  name: name
+                  value: "Xetra"
+              - column:
+                  name: country
+                  value: "Germany"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "BMV"
+              - column:
+                  name: name
+                  value: "Mexican Stock Exchange"
+              - column:
+                  name: country
+                  value: "Mexico"
+              - column:
+                  name: currency_code
+                  value: "MXN"
+        - insert:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+                  value: "BME"
+              - column:
+                  name: name
+                  value: "Madrid Stock Exchange"
+              - column:
+                  name: country
+                  value: "Spain"
+              - column:
+                  name: currency_code
+                  value: "EUR"
+
+  - changeSet:
+      id: 002-create-indexes-categories
+      author: portfolio-management
+      comment: Create indexes for category tables
+      changes:
+        - createIndex:
+            indexName: idx_stock_types_code
+            tableName: stock_types
+            columns:
+              - column:
+                  name: code
+        - createIndex:
+            indexName: idx_currencies_code
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+        - createIndex:
+            indexName: idx_exchanges_code
+            tableName: exchanges
+            columns:
+              - column:
+                  name: code
+        - createIndex:
+            indexName: idx_exchanges_country
+            tableName: exchanges
+            columns:
+              - column:
+                  name: country

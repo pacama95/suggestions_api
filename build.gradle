@@ -16,10 +16,30 @@ dependencies {
     implementation 'io.quarkus:quarkus-hibernate-validator'
     implementation 'io.quarkus:quarkus-mutiny'
 
+    // Database dependencies
+    implementation 'io.quarkus:quarkus-hibernate-reactive-panache'
+    implementation 'io.quarkus:quarkus-reactive-pg-client'
+    implementation 'io.quarkus:quarkus-jdbc-postgresql'
+    implementation 'io.quarkus:quarkus-liquibase'
+
+    // REST Client dependencies
+    implementation 'io.quarkus:quarkus-rest-client-reactive-jackson'
+
+    // Scheduler for periodic tasks
+    implementation 'io.quarkus:quarkus-scheduler'
+
+    // Caching
+    implementation 'io.quarkus:quarkus-cache'
+
+    // MapStruct for mapping
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'
     testImplementation 'io.smallrye.reactive:smallrye-mutiny-vertx-junit5'
     testImplementation 'io.quarkus:quarkus-junit5-mockito'
+    testImplementation 'org.assertj:assertj-core:4.0.0-M1'
 }
 
 group 'com.portfolio.management'

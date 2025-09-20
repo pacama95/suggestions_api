@@ -7,17 +7,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SuggestionServiceTest {
+class AdvancedSuggestionServiceTest {
 
     @Mock
-    StockPort mockRepository;
+    StockPort stockPort;
 
-    private SuggestionService suggestionService;
+    private AdvancedSuggestionService advancedSuggestionService;
 
     @BeforeEach
     void setUp() {
-        suggestionService = new SuggestionService(mockRepository);
+        advancedSuggestionService = new AdvancedSuggestionService(stockPort);
 
     }
+
 
 }

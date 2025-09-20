@@ -1,0 +1,133 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-stocks-table
+      author: portfolio-management
+      comment: Create stocks table for storing TwelveData stock information
+      changes:
+        - createTable:
+            tableName: stocks
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: symbol
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(10)
+              - column:
+                  name: exchange
+                  type: VARCHAR(100)
+              - column:
+                  name: mic_code
+                  type: VARCHAR(20)
+              - column:
+                  name: country
+                  type: VARCHAR(100)
+              - column:
+                  name: type
+                  type: VARCHAR(100)
+              - column:
+                  name: figi_code
+                  type: VARCHAR(50)
+              - column:
+                  name: cfi_code
+                  type: VARCHAR(20)
+              - column:
+                  name: isin
+                  type: VARCHAR(50)
+              - column:
+                  name: cusip
+                  type: VARCHAR(50)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_version
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+  - changeSet:
+      id: 001-create-stocks-sequence
+      author: system
+      comment: Create sequence for stocks table ID generation compatible with Hibernate
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE IF NOT EXISTS stocks_seq START 1 INCREMENT 50;
+              SELECT setval('stocks_seq', COALESCE(MAX(id), 1)) FROM stocks;
+
+  - changeSet:
+      id: 001-create-stocks-indexes
+      author: portfolio-management
+      comment: Create indexes for stocks table to optimize search performance
+      changes:
+        - createIndex:
+            indexName: idx_stock_symbol
+            tableName: stocks
+            columns:
+              - column:
+                  name: symbol
+        - createIndex:
+            indexName: idx_stock_name
+            tableName: stocks
+            columns:
+              - column:
+                  name: name
+        - createIndex:
+            indexName: idx_stock_exchange
+            tableName: stocks
+            columns:
+              - column:
+                  name: exchange
+        - createIndex:
+            indexName: idx_stock_country
+            tableName: stocks
+            columns:
+              - column:
+                  name: country
+        - createIndex:
+            indexName: idx_stock_active
+            tableName: stocks
+            columns:
+              - column:
+                  name: is_active
+        - createIndex:
+            indexName: idx_stock_symbol_name
+            tableName: stocks
+            columns:
+              - column:
+                  name: symbol
+              - column:
+                  name: name
+        - createIndex:
+            indexName: idx_stock_data_version
+            tableName: stocks
+            columns:
+              - column:
+                  name: data_version
