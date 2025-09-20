@@ -311,6 +311,7 @@ class StockPersistenceAdapterTest {
 
     private Stock createStock(String symbol, String name) {
         return new Stock(
+                null, // ID will be assigned by database
                 symbol,
                 name,
                 "USD",

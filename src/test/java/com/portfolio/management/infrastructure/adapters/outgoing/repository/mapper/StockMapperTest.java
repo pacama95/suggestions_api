@@ -23,6 +23,7 @@ class StockMapperTest {
     void shouldMapStockToStockEntity() {
         // Given
         Stock stock = new Stock(
+                1L,
                 "AAPL",
                 "Apple Inc.",
                 "USD",
@@ -97,9 +98,9 @@ class StockMapperTest {
     void shouldMapStockListToStockEntityList() {
         // Given
         List<Stock> stocks = List.of(
-                new Stock("AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States", 
+                new Stock(1L, "AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States", 
                          "Common Stock", "BBG000B9XRY4", "ESXXXX", "US0378331005", "037833100", 1L),
-                new Stock("MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States", 
+                new Stock(2L, "MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States", 
                          "Common Stock", "BBG000BPH459", "ESXXXX", "US5949181045", "594918104", 1L)
         );
 
@@ -179,6 +180,7 @@ class StockMapperTest {
     void shouldHandleMappingWithNullValues() {
         // Given
         Stock stockWithNulls = new Stock(
+                3L,
                 "TST",
                 "Test Company",
                 null, // currency is null

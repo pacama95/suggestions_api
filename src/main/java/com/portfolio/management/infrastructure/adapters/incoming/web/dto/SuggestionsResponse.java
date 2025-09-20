@@ -16,7 +16,7 @@ import java.util.List;
 public record SuggestionsResponse(
         @Schema(
                 description = "List of ticker suggestions matching the search query",
-                example = "[{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"exchange\":\"NASDAQ\",\"type\":\"Common Stock\",\"country\":\"US\",\"currency\":\"USD\"}]"
+                example = "[{\"id\":1,\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"exchange\":\"NASDAQ\",\"type\":\"Common Stock\",\"country\":\"US\",\"currency\":\"USD\"}]"
         )
         List<TickerSuggestionDto> suggestions,
 
@@ -40,6 +40,13 @@ public record SuggestionsResponse(
             description = "Individual ticker/symbol suggestion with company details"
     )
     public record TickerSuggestionDto(
+            @Schema(
+                    description = "Stock unique identifier",
+                    example = "1",
+                    required = true
+            )
+            Long id,
+
             @Schema(
                     description = "Stock ticker symbol (e.g., AAPL, MSFT, GOOGL)",
                     example = "AAPL",

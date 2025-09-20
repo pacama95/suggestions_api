@@ -236,6 +236,7 @@ class MarketDataAdapterTest {
 
     private Stock createStock(String symbol, String name) {
         return new Stock(
+                null, // ID not provided by external API
                 symbol,
                 name,
                 "USD",

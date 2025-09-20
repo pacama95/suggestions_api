@@ -34,7 +34,9 @@ public interface StockMapper {
     /**
      * Maps individual TwelveDataStock to Stock domain object
      * Uses cleaned symbol and name values and sets default dataVersion
+     * ID is set to null as external API doesn't provide database IDs
      */
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "symbol", expression = "java(twelveDataStock.getCleanedSymbol())")
     @Mapping(target = "name", expression = "java(twelveDataStock.getCleanedName())")
     @Mapping(target = "dataVersion", constant = "1L")

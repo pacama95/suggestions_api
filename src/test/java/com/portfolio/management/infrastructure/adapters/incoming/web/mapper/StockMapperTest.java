@@ -23,6 +23,7 @@ class StockMapperTest {
     void shouldMapStockToTickerSuggestionDto() {
         // Given
         Stock stock = new Stock(
+                1L,
                 "AAPL",
                 "Apple Inc.",
                 "USD",
@@ -42,6 +43,7 @@ class StockMapperTest {
 
         // Then
         assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(1L);
         assertThat(result.symbol()).isEqualTo("AAPL");
         assertThat(result.name()).isEqualTo("Apple Inc.");
         assertThat(result.exchange()).isEqualTo("NASDAQ");
@@ -54,11 +56,11 @@ class StockMapperTest {
     void shouldMapStockListToTickerSuggestionDtoList() {
         // Given
         List<Stock> stocks = List.of(
-                new Stock("AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States", 
+                new Stock(1L, "AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States", 
                          "Common Stock", "BBG000B9XRY4", "ESXXXX", "US0378331005", "037833100", 1L),
-                new Stock("MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States", 
+                new Stock(2L, "MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States", 
                          "Common Stock", "BBG000BPH459", "ESXXXX", "US5949181045", "594918104", 1L),
-                new Stock("GOOGL", "Alphabet Inc.", "USD", "NASDAQ", "XNAS", "United States", 
+                new Stock(3L, "GOOGL", "Alphabet Inc.", "USD", "NASDAQ", "XNAS", "United States", 
                          "Common Stock", "BBG009S39JX6", "ESXXXX", "US02079K3059", "02079K305", 1L)
         );
 
@@ -69,18 +71,22 @@ class StockMapperTest {
         assertThat(result).isNotNull();
         assertThat(result).hasSize(3);
         
+        assertThat(result.get(0).id()).isEqualTo(1L);
         assertThat(result.get(0).symbol()).isEqualTo("AAPL");
         assertThat(result.get(0).name()).isEqualTo("Apple Inc.");
         assertThat(result.get(0).exchange()).isEqualTo("NASDAQ");
         
+        assertThat(result.get(1).id()).isEqualTo(2L);
         assertThat(result.get(1).symbol()).isEqualTo("MSFT");
         assertThat(result.get(1).name()).isEqualTo("Microsoft Corporation");
         
+        assertThat(result.get(2).id()).isEqualTo(3L);
         assertThat(result.get(2).symbol()).isEqualTo("GOOGL");
         assertThat(result.get(2).name()).isEqualTo("Alphabet Inc.");
         
         // Verify all DTOs have proper mapping
         result.forEach(dto -> {
+            assertThat(dto.id()).isNotNull();
             assertThat(dto.symbol()).isNotNull();
             assertThat(dto.name()).isNotNull();
             assertThat(dto.exchange()).isEqualTo("NASDAQ");
@@ -107,6 +113,7 @@ class StockMapperTest {
     void shouldHandleMappingStockWithNullValues() {
         // Given
         Stock stockWithNulls = new Stock(
+                4L,
                 "TST",
                 "Test Company",
                 null, // currency is null
@@ -126,6 +133,7 @@ class StockMapperTest {
 
         // Then
         assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(4L);
         assertThat(result.symbol()).isEqualTo("TST");
         assertThat(result.name()).isEqualTo("Test Company");
         assertThat(result.currency()).isNull();
