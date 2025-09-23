@@ -12,11 +12,7 @@ public interface StockPort {
 
     Uni<StocksBatchProcessingResult> saveBatch(List<Stock> stocks);
 
-    Uni<List<Stock>> findActiveByQuery(String query, int limit);
-
-    Uni<Stock> findActiveBySymbol(String symbol);
-
-    Uni<Long> countActive();
+    Uni<List<Stock>> findCandidateStocks(String query, int limit);
 
     Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String region, String currency, int limit);
 

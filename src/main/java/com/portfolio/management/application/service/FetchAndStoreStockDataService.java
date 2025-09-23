@@ -4,7 +4,6 @@ import com.portfolio.management.domain.model.Stock;
 import com.portfolio.management.domain.port.incoming.FetchAndStoreStockDataUseCase;
 import com.portfolio.management.domain.port.outgoing.StockPort;
 import com.portfolio.management.infrastructure.adapters.outgoing.client.MarketDataAdapter;
-import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -14,12 +13,12 @@ import java.util.List;
 
 @ApplicationScoped
 public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseCase {
-    
+
     private final MarketDataAdapter marketDataAdapter;
     private final StockPort stockPort;
-    
+
     private static final int BATCH_SIZE = 1000;
-    
+
     public FetchAndStoreStockDataService(MarketDataAdapter twelveDataService, StockPort stockPort) {
         this.marketDataAdapter = twelveDataService;
         this.stockPort = stockPort;
@@ -28,17 +27,17 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
     public Uni<Result> fetchAndStoreStocks() {
         return marketDataAdapter.fetchAllStocks()
                 .onItem().transformToUni(stocks -> {
-                    if(stocks.isEmpty()) {
+                    if (stocks.isEmpty()) {
                         return Uni.createFrom().item(() ->
                                 new Result.Success(false, 0, "No stocks fetched from market data provider"));
                     } else {
                         return this.processAndStoreStocks(stocks);
                     }
                 })
-            .onFailure().recoverWithItem(throwable -> {
-                Log.errorf(throwable, "Failed to fetch and store stocks");
-                return new Result.Error("Failed: " + throwable.getMessage());
-            });
+                .onFailure().recoverWithItem(throwable -> {
+                    Log.errorf(throwable, "Failed to fetch and store stocks");
+                    return new Result.Error("Failed: " + throwable.getMessage());
+                });
     }
 
     private Uni<Result> processAndStoreStocks(List<Stock> fetchedStocks) {
@@ -60,9 +59,5 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
                 .onItem().transformToUniAndConcatenate(stockPort::saveBatch)
                 .collect().asList()
                 .replaceWithVoid();
-    }
-
-    public Uni<Long> getStockCount() {
-        return stockPort.countActive();
     }
 }

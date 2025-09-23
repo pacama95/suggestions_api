@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -35,77 +34,6 @@ class StockPersistenceAdapterTest {
     @BeforeEach
     void setUp() {
         stockPersistenceAdapter = new StockPersistenceAdapter(mockStockMapper, mockDatabaseRepository);
-    }
-
-    @Test
-    void shouldReturnStocksWhenValidQueryProvided() {
-        // Given
-        String query = "AAPL";
-        int limit = 10;
-        var stockEntities = List.of(createStockEntity("AAPL", "Apple Inc."));
-        var expectedStocks = List.of(createStock("AAPL", "Apple Inc."));
-
-        when(mockDatabaseRepository.findActiveByQuery(query, limit)).thenReturn(Uni.createFrom().item(stockEntities));
-        when(mockStockMapper.toStocks(stockEntities)).thenReturn(expectedStocks);
-
-        // When
-        List<Stock> result = stockPersistenceAdapter.findActiveByQuery(query, limit)
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .getItem();
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).symbol()).isEqualTo("AAPL");
-        assertThat(result.get(0).name()).isEqualTo("Apple Inc.");
-
-        verify(mockDatabaseRepository).findActiveByQuery(eq(query), eq(limit));
-        verify(mockStockMapper).toStocks(eq(stockEntities));
-    }
-
-    @Test
-    void shouldReturnStockWhenValidSymbolProvided() {
-        // Given
-        String symbol = "MSFT";
-        var stockEntity = createStockEntity("MSFT", "Microsoft Corporation");
-        var expectedStock = createStock("MSFT", "Microsoft Corporation");
-
-        when(mockDatabaseRepository.findActiveBySymbol(symbol)).thenReturn(Uni.createFrom().item(Optional.of(stockEntity)));
-        when(mockStockMapper.toStock(stockEntity)).thenReturn(expectedStock);
-
-        // When
-        Stock result = stockPersistenceAdapter.findActiveBySymbol(symbol)
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .getItem();
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.symbol()).isEqualTo("MSFT");
-        assertThat(result.name()).isEqualTo("Microsoft Corporation");
-
-        verify(mockDatabaseRepository).findActiveBySymbol(eq(symbol));
-        verify(mockStockMapper).toStock(eq(stockEntity));
-    }
-
-    @Test
-    void shouldReturnNullWhenSymbolNotFound() {
-        // Given
-        String symbol = "NONEXISTENT";
-
-        when(mockDatabaseRepository.findActiveBySymbol(symbol)).thenReturn(Uni.createFrom().item(Optional.empty()));
-
-        // When
-        Stock result = stockPersistenceAdapter.findActiveBySymbol(symbol)
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .getItem();
-
-        // Then
-        assertThat(result).isNull();
-
-        verify(mockDatabaseRepository).findActiveBySymbol(eq(symbol));
     }
 
     @Test
@@ -133,7 +61,7 @@ class StockPersistenceAdapterTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).symbol()).isEqualTo("AAPL");
+        assertThat(result.getFirst().symbol()).isEqualTo("AAPL");
 
         verify(mockDatabaseRepository).findByAdvancedSearch(eq(symbol), eq(companyName), eq(exchange), eq(country), eq(currency), eq(limit));
         verify(mockStockMapper).toStocks(eq(stockEntities));
@@ -196,25 +124,6 @@ class StockPersistenceAdapterTest {
     }
 
     @Test
-    void shouldReturnActiveStockCount() {
-        // Given
-        Long expectedCount = 1500L;
-
-        when(mockDatabaseRepository.countActive()).thenReturn(Uni.createFrom().item(expectedCount));
-
-        // When
-        Long result = stockPersistenceAdapter.countActive()
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .getItem();
-
-        // Then
-        assertThat(result).isEqualTo(expectedCount);
-
-        verify(mockDatabaseRepository).countActive();
-    }
-
-    @Test
     void shouldDeleteAllStocks() {
         // Given
         Long expectedDeletedCount = 100L;
@@ -231,29 +140,6 @@ class StockPersistenceAdapterTest {
         assertThat(result).isEqualTo(expectedDeletedCount);
 
         verify(mockDatabaseRepository).clearAll();
-    }
-
-    @Test
-    void shouldHandleErrorWhenRepositorySearchFails() {
-        // Given
-        String query = "TEST";
-        int limit = 10;
-
-        when(mockDatabaseRepository.findActiveByQuery(query, limit))
-                .thenReturn(Uni.createFrom().failure(new RuntimeException("Database error")));
-
-        // When
-        Throwable exception = stockPersistenceAdapter.findActiveByQuery(query, limit)
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertFailed()
-                .getFailure();
-
-        // Then
-        assertThat(exception).isInstanceOf(RuntimeException.class);
-        assertThat(exception.getMessage()).isEqualTo("Database error");
-
-        verify(mockDatabaseRepository).findActiveByQuery(eq(query), eq(limit));
     }
 
     @Test

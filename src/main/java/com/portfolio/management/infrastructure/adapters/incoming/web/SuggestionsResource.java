@@ -49,6 +49,28 @@ public class SuggestionsResource implements SuggestionsController {
                 );
     }
 
+    @Override
+    public Uni<Response> advancedSearch(String symbol, String companyName, String exchange, String country, String currency, int limit) {
+        // Validate at least one search parameter is provided
+        if (isBlank(symbol) && isBlank(companyName) && isBlank(exchange) && isBlank(country) && isBlank(currency)) {
+            var errorResponse = ErrorResponse.of("At least one search parameter must be provided");
+            return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build());
+        }
+
+        LOG.infof("Advanced search request - symbol: %s, companyName: %s, exchange: %s, country: %s, currency: %s, limit: %d",
+                symbol, companyName, exchange, country, currency, limit);
+
+        return Uni.createFrom().item(() -> new GetSuggestionsAdvancedUseCase.Query(symbol, companyName, exchange, country, currency, limit))
+                .flatMap(getSuggestionsAdvancedUseCase::execute)
+                .onItem().transform(this::mapToHttpResponse)
+                .onFailure().recoverWithItem(throwable -> {
+                    LOG.errorf(throwable, "Unexpected error processing suggestion request");
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(ErrorResponse.of("An unexpected error occurred"))
+                            .build();
+                });
+    }
+
     private Response mapToHttpResponse(GetSuggestionsUseCase.Result result) {
         return switch (result) {
             case GetSuggestionsUseCase.Result.Success(var suggestions, var query, var count) -> {
@@ -74,27 +96,6 @@ public class SuggestionsResource implements SuggestionsController {
         };
     }
 
-    @Override
-    public Uni<Response> advancedSearch(String symbol, String companyName, String exchange, String country, String currency, int limit) {
-        // Validate at least one search parameter is provided
-        if (isBlank(symbol) && isBlank(companyName) && isBlank(exchange) && isBlank(country) && isBlank(currency)) {
-            var errorResponse = ErrorResponse.of("At least one search parameter must be provided");
-            return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build());
-        }
-
-        LOG.infof("Advanced search request - symbol: %s, companyName: %s, exchange: %s, country: %s, currency: %s, limit: %d",
-                symbol, companyName, exchange, country, currency, limit);
-
-        return Uni.createFrom().item(() -> new GetSuggestionsAdvancedUseCase.Query(symbol, companyName, exchange, country, currency, limit))
-                .flatMap(getSuggestionsAdvancedUseCase::execute)
-                .onItem().transform(this::mapToHttpResponse)
-                .onFailure().recoverWithItem(throwable -> {
-                    LOG.errorf(throwable, "Unexpected error processing suggestion request");
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(ErrorResponse.of("An unexpected error occurred"))
-                            .build();
-                });
-    }
 
     private Response mapToHttpResponse(GetSuggestionsAdvancedUseCase.Result result) {
         return switch (result) {

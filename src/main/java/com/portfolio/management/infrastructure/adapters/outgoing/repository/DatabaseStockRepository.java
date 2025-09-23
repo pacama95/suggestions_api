@@ -6,7 +6,10 @@ import io.quarkus.panache.common.Sort;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Repository for StockEntity using Reactive Panache
@@ -14,37 +17,22 @@ import java.util.*;
 @ApplicationScoped
 public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
 
-    /**
-     * Find active stocks matching the query string - truly reactive
-     */
-    public Uni<List<StockEntity>> findActiveByQuery(String query, int limit) {
-        String likeQuery = "%" + query.toLowerCase() + "%";
-        return find("isActive = true AND (lower(symbol) LIKE ?1 OR lower(name) LIKE ?1)",
-                Sort.ascending("symbol"), likeQuery)
-                .page(0, Math.max(1, Math.min(limit, 100)))
-                .list();
+    public Uni<List<StockEntity>> findCandidateStocks(String query, int limit) {
+        String trimmedQuery = query.trim();
+        int maxLimit = Math.max(1, Math.min(limit, 300));
+
+        return findExactMatches(trimmedQuery, maxLimit)
+                .chain(exactMatches -> {
+                    int remaining = maxLimit - exactMatches.size();
+                    if (remaining <= 0) {
+                        return Uni.createFrom().item(exactMatches);
+                    }
+
+                    return findPartialMatches(trimmedQuery, remaining, exactMatches)
+                            .map(partialMatches -> combineResults(exactMatches, partialMatches));
+                });
     }
 
-    /**
-     * Find active stock by symbol - truly reactive
-     */
-    public Uni<Optional<StockEntity>> findActiveBySymbol(String symbol) {
-        return find("isActive = true AND upper(symbol) = upper(?1)", symbol)
-                .firstResult()
-                .map(Optional::ofNullable);
-    }
-
-    /**
-     * Count active stocks - truly reactive
-     */
-    public Uni<Long> countActive() {
-        return count("isActive = true");
-    }
-
-    /**
-     * Advanced search with multiple optional criteria - truly reactive
-     * At least one search parameter must be provided (non-null and non-empty)
-     */
     public Uni<List<StockEntity>> findByAdvancedSearch(
             String symbol, String companyName, String exchange, String country, String currency, int limit) {
 
@@ -58,10 +46,38 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
         return findByAdvancedSearch(searchCriteria, limit);
     }
 
-    /**
-     * Advanced search with flexible criteria map - truly reactive
-     * At least one search parameter must be provided (non-null and non-empty)
-     */
+    private Uni<List<StockEntity>> findExactMatches(String query, int limit) {
+        String queryUpper = query.toUpperCase();
+        return find("isActive = true AND (upper(symbol) = ?1 OR upper(name) = ?1)",
+                Sort.ascending("symbol"), queryUpper)
+                .page(0, limit)
+                .list();
+    }
+
+    private Uni<List<StockEntity>> findPartialMatches(String query, int limit, List<StockEntity> existingResults) {
+        String queryLower = query.toLowerCase();
+        String likeQuery = "%" + queryLower + "%";
+
+        return find("isActive = true AND (lower(symbol) LIKE ?1 OR lower(name) LIKE ?1)",
+                Sort.ascending("symbol"), likeQuery)
+                .page(0, limit + existingResults.size()) // Fetch more to account for duplicates
+                .list()
+                .map(results -> filterDuplicates(results, existingResults, limit));
+    }
+
+    private List<StockEntity> combineResults(List<StockEntity> exactMatches, List<StockEntity> partialMatches) {
+        var combined = new java.util.ArrayList<>(exactMatches);
+        combined.addAll(partialMatches);
+        return combined;
+    }
+
+    private List<StockEntity> filterDuplicates(List<StockEntity> candidates, List<StockEntity> existing, int limit) {
+        return candidates.stream()
+                .filter(candidate -> existing.stream().noneMatch(ex -> ex.id.equals(candidate.id)))
+                .limit(limit)
+                .toList();
+    }
+
     private Uni<List<StockEntity>> findByAdvancedSearch(Map<String, String> searchCriteria, int limit) {
         return Uni.createFrom().item(() -> validateAndBuildQuery(searchCriteria))
                 .flatMap(queryData -> find(queryData.query(), queryData.parameters().toArray())
@@ -69,9 +85,6 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
                         .list());
     }
 
-    /**
-     * Validates search criteria and builds the query with parameters
-     */
     private QueryData validateAndBuildQuery(Map<String, String> searchCriteria) {
         if (searchCriteria == null || searchCriteria.isEmpty()) {
             throw new IllegalArgumentException("Search criteria cannot be null or empty");
@@ -112,66 +125,6 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
         return new QueryData(query.toString(), parameters);
     }
 
-    /**
-     * Simple search by symbol only - truly reactive
-     */
-    public Uni<List<StockEntity>> findBySymbol(String symbol, int limit) {
-        return findByAdvancedSearch(Map.of("symbol", symbol), limit);
-    }
-
-    /**
-     * Simple search by company name only - truly reactive
-     */
-    public Uni<List<StockEntity>> findByCompanyName(String companyName, int limit) {
-        return findByAdvancedSearch(Map.of("name", companyName), limit);
-    }
-
-    /**
-     * Search with multiple criteria using builder pattern - truly reactive
-     */
-    public static class SearchCriteriaBuilder {
-        private final Map<String, String> criteria = new HashMap<>();
-
-        public SearchCriteriaBuilder symbol(String symbol) {
-            if (symbol != null) criteria.put("symbol", symbol);
-            return this;
-        }
-
-        public SearchCriteriaBuilder companyName(String companyName) {
-            if (companyName != null) criteria.put("name", companyName);
-            return this;
-        }
-
-        public SearchCriteriaBuilder exchange(String exchange) {
-            if (exchange != null) criteria.put("exchange", exchange);
-            return this;
-        }
-
-        public SearchCriteriaBuilder country(String country) {
-            if (country != null) criteria.put("country", country);
-            return this;
-        }
-
-        public SearchCriteriaBuilder currency(String currency) {
-            if (currency != null) criteria.put("currency", currency);
-            return this;
-        }
-
-        public Map<String, String> build() {
-            return new HashMap<>(criteria);
-        }
-    }
-
-    /**
-     * Create a new search criteria builder
-     */
-    public static SearchCriteriaBuilder searchCriteria() {
-        return new SearchCriteriaBuilder();
-    }
-
-    /**
-     * Record to hold query and parameters data
-     */
     private record QueryData(String query, List<String> parameters) {
     }
 

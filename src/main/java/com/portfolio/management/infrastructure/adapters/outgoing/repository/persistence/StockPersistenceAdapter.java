@@ -78,23 +78,9 @@ public class StockPersistenceAdapter implements StockPort {
 
     @Override
     @WithSession
-    public Uni<List<Stock>> findActiveByQuery(String query, int limit) {
-        return databaseStockRepository.findActiveByQuery(query, limit)
+    public Uni<List<Stock>> findCandidateStocks(String query, int limit) {
+        return databaseStockRepository.findCandidateStocks(query, limit)
                 .map(stockMapper::toStocks);
-    }
-
-    @Override
-    @WithSession
-    public Uni<Stock> findActiveBySymbol(String symbol) {
-        return databaseStockRepository.findActiveBySymbol(symbol)
-                .onItem().transform(stockEntity ->
-                        stockEntity.map(stockMapper::toStock).orElse(null));
-    }
-
-    @Override
-    @WithSession
-    public Uni<Long> countActive() {
-        return databaseStockRepository.countActive();
     }
 
     @Override
