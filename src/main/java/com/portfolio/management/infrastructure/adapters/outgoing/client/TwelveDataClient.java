@@ -15,5 +15,7 @@ public interface TwelveDataClient {
 
     @GET
     @Path("/stocks")
-    Uni<TwelveDataStockResponse> getAllStocks(@QueryParam("apikey") String apiKey);
+    Uni<TwelveDataStockResponse> getStocks(@QueryParam("apikey") String apiKey,
+                                           @QueryParam("exchange") String exchange,
+                                           @QueryParam("country") String country);
 }

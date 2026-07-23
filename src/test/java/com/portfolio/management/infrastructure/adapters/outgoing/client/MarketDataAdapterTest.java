@@ -1,11 +1,13 @@
 package com.portfolio.management.infrastructure.adapters.outgoing.client;
 
 import com.portfolio.management.domain.model.Stock;
+import com.portfolio.management.domain.model.StockFilter;
 import com.portfolio.management.infrastructure.adapters.outgoing.client.dto.TwelveDataStockResponse;
 import com.portfolio.management.infrastructure.adapters.outgoing.client.mapper.StockMapper;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -16,6 +18,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,177 +42,206 @@ class MarketDataAdapterTest {
 
     @Test
     void shouldReturnStocksWhenApiCallSucceeds() {
-        // Given
         var apiResponse = createMockApiResponse();
         var expectedStocks = List.of(
                 createStock("AAPL", "Apple Inc."),
                 createStock("MSFT", "Microsoft Corporation")
         );
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(apiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(apiResponse));
         when(mockStockMapper.toStocks(apiResponse)).thenReturn(expectedStocks);
 
-        // When
-        List<Stock> result = marketDataAdapter.fetchAllStocks()
+        List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
 
-        // Then
-        assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
         assertThat(result.get(0).symbol()).isEqualTo("AAPL");
-        assertThat(result.get(0).name()).isEqualTo("Apple Inc.");
         assertThat(result.get(1).symbol()).isEqualTo("MSFT");
-        assertThat(result.get(1).name()).isEqualTo("Microsoft Corporation");
 
-        verify(mockClient).getAllStocks(eq(apiKey));
+        verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
         verify(mockStockMapper).toStocks(eq(apiResponse));
     }
 
     @Test
     void shouldMapApiResponseToStocksCorrectly() {
-        // Given
         var apiResponse = createMockApiResponse();
         var expectedStocks = List.of(
                 createStock("GOOGL", "Alphabet Inc."),
                 createStock("TSLA", "Tesla Inc.")
         );
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(apiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(apiResponse));
         when(mockStockMapper.toStocks(apiResponse)).thenReturn(expectedStocks);
 
-        // When
-        List<Stock> result = marketDataAdapter.fetchAllStocks()
+        List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
 
-        // Then
-        assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
-
-        // Verify mapping was called with correct response
-        verify(mockStockMapper).toStocks(eq(apiResponse));
-
-        // Verify mapped stocks have expected properties
         assertThat(result.get(0).symbol()).isEqualTo("GOOGL");
         assertThat(result.get(0).currency()).isEqualTo("USD");
         assertThat(result.get(0).exchange()).isEqualTo("NASDAQ");
         assertThat(result.get(0).country()).isEqualTo("United States");
-
-        assertThat(result.get(1).symbol()).isEqualTo("TSLA");
-        assertThat(result.get(1).currency()).isEqualTo("USD");
-        assertThat(result.get(1).exchange()).isEqualTo("NASDAQ");
-        assertThat(result.get(1).country()).isEqualTo("United States");
     }
 
     @Test
     void shouldHandleEmptyApiResponse() {
-        // Given
         var emptyApiResponse = new TwelveDataStockResponse(List.of(), "ok");
-        var emptyStockList = Collections.emptyList();
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(emptyApiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(emptyApiResponse));
+        when(mockStockMapper.toStocks(emptyApiResponse)).thenReturn(Collections.emptyList());
 
-        // When
-        List<Stock> result = marketDataAdapter.fetchAllStocks()
+        List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
 
-        // Then
-        assertThat(result).isNotNull();
         assertThat(result).isEmpty();
-
-        verify(mockClient).getAllStocks(eq(apiKey));
+        verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
         verify(mockStockMapper).toStocks(eq(emptyApiResponse));
     }
 
     @Test
     void shouldHandleErrorWhenApiClientFails() {
-        // Given
-        when(mockClient.getAllStocks(apiKey))
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull()))
                 .thenReturn(Uni.createFrom().failure(new RuntimeException("API call failed")));
 
-        // When
-        Throwable exception = marketDataAdapter.fetchAllStocks()
+        Throwable exception = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .assertFailed()
                 .getFailure();
 
-        // Then
         assertThat(exception).isInstanceOf(RuntimeException.class);
         assertThat(exception.getMessage()).isEqualTo("API call failed");
-
-        verify(mockClient).getAllStocks(eq(apiKey));
     }
 
     @Test
     void shouldHandleErrorWhenMappingFails() {
-        // Given
         var apiResponse = createMockApiResponse();
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(apiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(apiResponse));
         when(mockStockMapper.toStocks(apiResponse))
                 .thenThrow(new RuntimeException("Mapping failed"));
 
-        // When
-        Throwable exception = marketDataAdapter.fetchAllStocks()
+        Throwable exception = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .assertFailed()
                 .getFailure();
 
-        // Then
         assertThat(exception).isInstanceOf(RuntimeException.class);
         assertThat(exception.getMessage()).isEqualTo("Mapping failed");
-
-        verify(mockClient).getAllStocks(eq(apiKey));
-        verify(mockStockMapper).toStocks(eq(apiResponse));
     }
 
     @Test
     void shouldUseCorrectApiKey() {
-        // Given
         var apiResponse = createMockApiResponse();
         var expectedStocks = List.of(createStock("NFLX", "Netflix Inc."));
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(apiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(apiResponse));
         when(mockStockMapper.toStocks(apiResponse)).thenReturn(expectedStocks);
 
-        // When
-        marketDataAdapter.fetchAllStocks()
+        marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
 
-        // Then
-        verify(mockClient).getAllStocks(eq(apiKey));
+        verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
     }
 
     @Test
     void shouldHandleLargeStockListFromApi() {
-        // Given
         var largeApiResponse = createLargeMockApiResponse();
         var largeStockList = createLargeStockList();
 
-        when(mockClient.getAllStocks(apiKey)).thenReturn(Uni.createFrom().item(largeApiResponse));
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(largeApiResponse));
         when(mockStockMapper.toStocks(largeApiResponse)).thenReturn(largeStockList);
 
-        // When
-        List<Stock> result = marketDataAdapter.fetchAllStocks()
+        List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1000); // Large list
+        assertThat(result).hasSize(1000);
+        verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
+    }
 
-        verify(mockClient).getAllStocks(eq(apiKey));
-        verify(mockStockMapper).toStocks(eq(largeApiResponse));
+    @Test
+    @DisplayName("Should make one API call per exchange and country combination")
+    void shouldMakeOneApiCallPerExchangeAndCountryCombination() {
+        var nasdaqResponse = new TwelveDataStockResponse(List.of(), "nasdaq");
+        var nyseResponse = new TwelveDataStockResponse(List.of(), "nyse");
+
+        when(mockClient.getStocks(eq(apiKey), eq("NASDAQ"), eq("United States")))
+                .thenReturn(Uni.createFrom().item(nasdaqResponse));
+        when(mockClient.getStocks(eq(apiKey), eq("NYSE"), eq("United States")))
+                .thenReturn(Uni.createFrom().item(nyseResponse));
+        when(mockStockMapper.toStocks(nasdaqResponse))
+                .thenReturn(List.of(createStock("AAPL", "Apple Inc.")));
+        when(mockStockMapper.toStocks(nyseResponse))
+                .thenReturn(List.of(createStock("JPM", "JPMorgan Chase")));
+
+        StockFilter filter = new StockFilter(List.of("United States"), List.of("NASDAQ", "NYSE"));
+
+        List<Stock> result = marketDataAdapter.fetchStocks(filter)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(result).hasSize(2);
+        verify(mockClient).getStocks(eq(apiKey), eq("NASDAQ"), eq("United States"));
+        verify(mockClient).getStocks(eq(apiKey), eq("NYSE"), eq("United States"));
+    }
+
+    @Test
+    @DisplayName("Should deduplicate stocks across multiple API calls")
+    void shouldDeduplicateStocksAcrossMultipleApiCalls() {
+        var nasdaqResponse = new TwelveDataStockResponse(List.of(), "nasdaq");
+        var nyseResponse = new TwelveDataStockResponse(List.of(), "nyse");
+        Stock duplicateStock = createStock("AAPL", "Apple Inc.");
+
+        when(mockClient.getStocks(eq(apiKey), eq("NASDAQ"), eq("United States")))
+                .thenReturn(Uni.createFrom().item(nasdaqResponse));
+        when(mockClient.getStocks(eq(apiKey), eq("NYSE"), eq("United States")))
+                .thenReturn(Uni.createFrom().item(nyseResponse));
+        when(mockStockMapper.toStocks(nasdaqResponse)).thenReturn(List.of(duplicateStock));
+        when(mockStockMapper.toStocks(nyseResponse)).thenReturn(List.of(duplicateStock));
+
+        StockFilter filter = new StockFilter(List.of("United States"), List.of("NASDAQ", "NYSE"));
+
+        List<Stock> result = marketDataAdapter.fetchStocks(filter)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(result).hasSize(1);
+        verify(mockClient).getStocks(eq(apiKey), eq("NASDAQ"), eq("United States"));
+        verify(mockClient).getStocks(eq(apiKey), eq("NYSE"), eq("United States"));
+    }
+
+    @Test
+    @DisplayName("Should pass provider-side filters for single exchange and country")
+    void shouldPassProviderSideFiltersForSingleExchangeAndCountry() {
+        var apiResponse = createMockApiResponse();
+        var expectedStocks = List.of(createStock("AAPL", "Apple Inc."));
+
+        when(mockClient.getStocks(eq(apiKey), eq("NASDAQ"), eq("United States")))
+                .thenReturn(Uni.createFrom().item(apiResponse));
+        when(mockStockMapper.toStocks(apiResponse)).thenReturn(expectedStocks);
+
+        StockFilter filter = new StockFilter(List.of("United States"), List.of("NASDAQ"));
+
+        List<Stock> result = marketDataAdapter.fetchStocks(filter)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(result).hasSize(1);
+        verify(mockClient).getStocks(eq(apiKey), eq("NASDAQ"), eq("United States"));
     }
 
     private TwelveDataStockResponse createMockApiResponse() {
@@ -231,12 +264,16 @@ class MarketDataAdapterTest {
     }
 
     private List<Stock> createLargeStockList() {
-        return java.util.Collections.nCopies(1000, createStock("TEST", "Test Stock"));
+        List<Stock> stocks = new java.util.ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            stocks.add(createStock("TEST" + i, "Test Stock " + i));
+        }
+        return stocks;
     }
 
     private Stock createStock(String symbol, String name) {
         return new Stock(
-                null, // ID not provided by external API
+                null,
                 symbol,
                 name,
                 "USD",

@@ -17,8 +17,8 @@ RUN ./gradlew dependencies --no-daemon
 # Copy source code
 COPY src/ src/
 
-# Build the native executable
-RUN ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=false --no-daemon
+# Build the native executable with increased memory for suggestions-api
+RUN ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=3500m -Dquarkus.native.additional-build-args=--parallelism=4 --no-daemon
 
 # Runtime stage - minimal image
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6

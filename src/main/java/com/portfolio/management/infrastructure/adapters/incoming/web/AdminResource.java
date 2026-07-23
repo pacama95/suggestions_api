@@ -1,11 +1,13 @@
 package com.portfolio.management.infrastructure.adapters.incoming.web;
 
+import com.portfolio.management.domain.model.StockFilter;
 import com.portfolio.management.domain.port.incoming.FetchAndStoreStockDataUseCase;
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,7 +15,7 @@ import java.util.Map;
  */
 @ApplicationScoped
 public class AdminResource implements AdminController {
-    
+
     private final FetchAndStoreStockDataUseCase fetchAndStoreStockDataUseCase;
 
     public AdminResource(FetchAndStoreStockDataUseCase fetchAndStoreStockDataUseCase) {
@@ -21,10 +23,15 @@ public class AdminResource implements AdminController {
     }
 
     @Override
-    public Uni<Response> fetchStocks() {
-        return fetchAndStoreStockDataUseCase.fetchAndStoreStocks()
+    public Uni<Response> fetchStocks(List<String> countries, List<String> exchanges) {
+        StockFilter filter = new StockFilter(
+                countries != null ? countries : List.of(),
+                exchanges != null ? exchanges : List.of()
+        );
+
+        return fetchAndStoreStockDataUseCase.fetchAndStoreStocks(filter)
                 .map(result -> switch (result) {
-                    case FetchAndStoreStockDataUseCase.Result.Success success->
+                    case FetchAndStoreStockDataUseCase.Result.Success success ->
                             Response.ok(Map.of("success", success.success(), "message", success.message(), "recordsProcessed", success.recordsProcessed())).build();
                     case FetchAndStoreStockDataUseCase.Result.Error error ->
                             Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(Map.of("error", error.message())).build();

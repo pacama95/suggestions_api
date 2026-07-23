@@ -6,6 +6,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -15,6 +16,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+import java.util.List;
 
 /**
  * REST API interface for Admin operations
@@ -29,8 +32,10 @@ public interface AdminController {
     @Operation(
         summary = "Fetch stocks from TwelveData API and store in database",
         description = "Administrative endpoint to populate the database with stock data from the TwelveData API. " +
-                     "This operation fetches all available stocks and stores them in the local H2 database. " +
-                     "Use this endpoint to initialize or refresh the stock data."
+                     "Supports optional country and exchange filters (repeatable query params). " +
+                     "Filters compose with AND semantics across dimensions. " +
+                     "When omitted, configured defaults from application.properties are used; " +
+                     "if no defaults are set, all available stocks are fetched."
     )
     @APIResponses({
         @APIResponse(
@@ -73,5 +78,6 @@ public interface AdminController {
             )
         )
     })
-    Uni<Response> fetchStocks();
+    Uni<Response> fetchStocks(@QueryParam("country") List<String> countries,
+                                @QueryParam("exchange") List<String> exchanges);
 }
