@@ -19,7 +19,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: static_score
-                  type: NUMERIC(10,2)
+                  type: FLOAT8
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
@@ -47,7 +47,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: popularity_score
-                  type: NUMERIC(10,2)
+                  type: FLOAT8
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
@@ -56,7 +56,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: popularity_score
-                  type: NUMERIC(10,2)
+                  type: FLOAT8
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
@@ -65,7 +65,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: popularity_score
-                  type: NUMERIC(10,2)
+                  type: FLOAT8
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
