@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -22,7 +21,7 @@ public class StockPopularityEntity extends PanacheEntityBase {
     public String symbol;
 
     @Column(name = "static_score", nullable = false)
-    private BigDecimal staticScore;
+    private Double staticScore;
 
     @Column(name = "tx_count", nullable = false)
     private Long txCount;
@@ -33,11 +32,11 @@ public class StockPopularityEntity extends PanacheEntityBase {
     public StockPopularityEntity() {
     }
 
-    public BigDecimal getStaticScore() {
+    public Double getStaticScore() {
         return staticScore;
     }
 
-    public void setStaticScore(BigDecimal staticScore) {
+    public void setStaticScore(Double staticScore) {
         this.staticScore = staticScore;
     }
 
