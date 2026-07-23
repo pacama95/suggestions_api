@@ -31,6 +31,9 @@ dependencies {
     // Caching
     implementation 'io.quarkus:quarkus-cache'
 
+    // Redis Streams consumer (transaction events -> popularity signal)
+    implementation 'io.quarkus:quarkus-redis-client'
+
     // MapStruct for mapping
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
