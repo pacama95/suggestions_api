@@ -6,6 +6,8 @@ import com.portfolio.management.domain.model.StocksBatchProcessingResult;
 import com.portfolio.management.domain.port.outgoing.StockPort;
 import com.portfolio.management.infrastructure.adapters.outgoing.repository.DatabaseStockRepository;
 import com.portfolio.management.infrastructure.adapters.outgoing.repository.mapper.StockMapper;
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.quarkus.logging.Log;
@@ -77,6 +79,7 @@ public class StockPersistenceAdapter implements StockPort {
     }
 
     @Override
+    @CacheResult(cacheName = "stock-suggestions")
     @WithSession
     public Uni<List<Stock>> findCandidateStocks(String query, int limit) {
         return databaseStockRepository.findCandidateStocks(query, limit)
@@ -84,6 +87,7 @@ public class StockPersistenceAdapter implements StockPort {
     }
 
     @Override
+    @CacheResult(cacheName = "stock-advanced-search")
     @WithSession
     public Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String country, String currency, int limit) {
         return databaseStockRepository.findByAdvancedSearch(symbol, companyName, exchange, country, currency, limit)
@@ -91,8 +95,20 @@ public class StockPersistenceAdapter implements StockPort {
     }
 
     @Override
+    @CacheInvalidateAll(cacheName = "stock-suggestions")
+    @CacheInvalidateAll(cacheName = "stock-advanced-search")
     @WithTransaction
     public Uni<Long> deleteAll() {
         return databaseStockRepository.clearAll();
+    }
+
+    @Override
+    @WithSession
+    public Uni<Void> analyzeTable() {
+        return databaseStockRepository.analyzeTable()
+                .onFailure().recoverWithItem(throwable -> {
+                    Log.warnf(throwable, "Failed to ANALYZE stocks table, skipping");
+                    return null;
+                });
     }
 }

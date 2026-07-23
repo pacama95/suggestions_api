@@ -71,7 +71,7 @@ class SuggestionServiceTest {
         // Given
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("AAPL", 10);
 
-        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(50))) // 10 * 5 (FETCH_MULTIPLIER)
+        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(20))) // 10 * 2 (FETCH_MULTIPLIER)
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))
@@ -104,7 +104,7 @@ class SuggestionServiceTest {
         // Given
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("NONEXISTENT", 10);
 
-        when(mockStockPort.findCandidateStocks(eq("NONEXISTENT"), eq(50)))
+        when(mockStockPort.findCandidateStocks(eq("NONEXISTENT"), eq(20)))
                 .thenReturn(Uni.createFrom().item(List.of()));
 
         // When
@@ -135,7 +135,7 @@ class SuggestionServiceTest {
 
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("APP", 2);
 
-        when(mockStockPort.findCandidateStocks(eq("APP"), eq(10))) // 2 * 5
+        when(mockStockPort.findCandidateStocks(eq("APP"), eq(4))) // 2 * 2
                 .thenReturn(Uni.createFrom().item(manyStocks));
 
         when(mockSymbolStrategy.matches(eq(manyStocks), eq("APP")))
@@ -163,7 +163,7 @@ class SuggestionServiceTest {
         // Given
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("Apple", 10);
 
-        when(mockStockPort.findCandidateStocks(eq("Apple"), eq(50)))
+        when(mockStockPort.findCandidateStocks(eq("Apple"), eq(20)))
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("Apple")))
@@ -261,7 +261,7 @@ class SuggestionServiceTest {
         // Given
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("AAPL", 3);
 
-        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(15))) // 3 * 5 (FETCH_MULTIPLIER)
+        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(6))) // 3 * 2 (FETCH_MULTIPLIER)
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))
@@ -283,7 +283,7 @@ class SuggestionServiceTest {
         // Given
         GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("  AAPL  ", 10);
 
-        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(50))) // Note: trimmed input
+        when(mockStockPort.findCandidateStocks(eq("AAPL"), eq(20))) // Note: trimmed input
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))

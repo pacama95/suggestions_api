@@ -17,4 +17,10 @@ public interface StockPort {
     Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String region, String currency, int limit);
 
     Uni<Long> deleteAll();
+
+    /**
+     * Refreshes DB planner statistics for the stocks table. Best-effort: failures
+     * are logged and swallowed by the adapter, never surfaced to callers.
+     */
+    Uni<Void> analyzeTable();
 }

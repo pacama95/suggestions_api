@@ -74,6 +74,7 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
         return clearExistingStocks()
                 .invoke(stocksCleared -> Log.infof("%d stocks cleared", stocksCleared))
                 .flatMap(ignored -> storeStocksInBatches(fetchedStocks))
+                .flatMap(ignored -> stockPort.analyzeTable())
                 .replaceWith(() -> new Result.Success(true, fetchedStocks.size(), "Successfully fetched and stored stocks"));
     }
 

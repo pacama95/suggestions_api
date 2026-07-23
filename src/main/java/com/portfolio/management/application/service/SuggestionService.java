@@ -22,7 +22,7 @@ public class SuggestionService implements GetSuggestionsUseCase {
 
     private static final Logger LOG = Logger.getLogger(SuggestionService.class);
 
-    private static final int FETCH_MULTIPLIER = 5;
+    private static final int FETCH_MULTIPLIER = 2;
 
     private final StockPort stockPort;
     private final List<PriorityStrategy> priorityStrategies;

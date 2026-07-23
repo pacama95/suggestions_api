@@ -2,7 +2,6 @@ package com.portfolio.management.infrastructure.adapters.outgoing.repository;
 
 import com.portfolio.management.infrastructure.adapters.outgoing.repository.persistence.entity.StockEntity;
 import io.quarkus.hibernate.reactive.panache.PanacheRepository;
-import io.quarkus.panache.common.Sort;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -17,20 +16,41 @@ import java.util.Map;
 @ApplicationScoped
 public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
 
+    public static final int MAX_CANDIDATE_LIMIT = 300;
+    public static final int MAX_ADVANCED_SEARCH_LIMIT = 100;
+
+    /**
+     * Single query: filters candidates by symbol/name LIKE, then ranks them by match
+     * quality (exact symbol/name > prefix > contains) so the priority-strategy chain
+     * downstream receives already-ordered candidates instead of two unordered batches
+     * that need Java-side dedup.
+     */
+    private static final String FIND_CANDIDATES_QUERY = """
+            from StockEntity
+            where isActive = true
+              and (lower(symbol) like ?1 or lower(name) like ?1)
+            order by
+              case
+                when upper(symbol) = ?2 then 0
+                when upper(name) = ?2 then 1
+                when lower(symbol) like ?3 then 2
+                when lower(name) like ?3 then 3
+                else 4
+              end,
+              symbol asc
+            """;
+
     public Uni<List<StockEntity>> findCandidateStocks(String query, int limit) {
         String trimmedQuery = query.trim();
-        int maxLimit = Math.max(1, Math.min(limit, 300));
+        int maxLimit = Math.max(1, Math.min(limit, MAX_CANDIDATE_LIMIT));
 
-        return findExactMatches(trimmedQuery, maxLimit)
-                .chain(exactMatches -> {
-                    int remaining = maxLimit - exactMatches.size();
-                    if (remaining <= 0) {
-                        return Uni.createFrom().item(exactMatches);
-                    }
+        String likeParam = "%" + trimmedQuery.toLowerCase() + "%";
+        String exactParam = trimmedQuery.toUpperCase();
+        String prefixParam = trimmedQuery.toLowerCase() + "%";
 
-                    return findPartialMatches(trimmedQuery, remaining, exactMatches)
-                            .map(partialMatches -> combineResults(exactMatches, partialMatches));
-                });
+        return find(FIND_CANDIDATES_QUERY, likeParam, exactParam, prefixParam)
+                .page(0, maxLimit)
+                .list();
     }
 
     public Uni<List<StockEntity>> findByAdvancedSearch(
@@ -46,42 +66,10 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
         return findByAdvancedSearch(searchCriteria, limit);
     }
 
-    private Uni<List<StockEntity>> findExactMatches(String query, int limit) {
-        String queryUpper = query.toUpperCase();
-        return find("isActive = true AND (upper(symbol) = ?1 OR upper(name) = ?1)",
-                Sort.ascending("symbol"), queryUpper)
-                .page(0, limit)
-                .list();
-    }
-
-    private Uni<List<StockEntity>> findPartialMatches(String query, int limit, List<StockEntity> existingResults) {
-        String queryLower = query.toLowerCase();
-        String likeQuery = "%" + queryLower + "%";
-
-        return find("isActive = true AND (lower(symbol) LIKE ?1 OR lower(name) LIKE ?1)",
-                Sort.ascending("symbol"), likeQuery)
-                .page(0, limit + existingResults.size()) // Fetch more to account for duplicates
-                .list()
-                .map(results -> filterDuplicates(results, existingResults, limit));
-    }
-
-    private List<StockEntity> combineResults(List<StockEntity> exactMatches, List<StockEntity> partialMatches) {
-        var combined = new java.util.ArrayList<>(exactMatches);
-        combined.addAll(partialMatches);
-        return combined;
-    }
-
-    private List<StockEntity> filterDuplicates(List<StockEntity> candidates, List<StockEntity> existing, int limit) {
-        return candidates.stream()
-                .filter(candidate -> existing.stream().noneMatch(ex -> ex.id.equals(candidate.id)))
-                .limit(limit)
-                .toList();
-    }
-
     private Uni<List<StockEntity>> findByAdvancedSearch(Map<String, String> searchCriteria, int limit) {
         return Uni.createFrom().item(() -> validateAndBuildQuery(searchCriteria))
                 .flatMap(queryData -> find(queryData.query(), queryData.parameters().toArray())
-                        .page(0, Math.max(1, Math.min(limit, 100)))
+                        .page(0, Math.max(1, Math.min(limit, MAX_ADVANCED_SEARCH_LIMIT)))
                         .list());
     }
 
@@ -116,7 +104,7 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
 
             if (value != null && !value.trim().isEmpty() && fieldMapping.containsKey(field)) {
                 String entityField = fieldMapping.get(field);
-                query.append(" AND upper(").append(entityField).append(") LIKE upper(?").append(paramIndex).append(")");
+                query.append(" AND lower(").append(entityField).append(") LIKE lower(?").append(paramIndex).append(")");
                 parameters.add("%" + value.trim() + "%");
                 paramIndex++;
             }
@@ -134,5 +122,16 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
 
     public Uni<List<StockEntity>> persistBatch(List<StockEntity> stockEntities) {
         return persist(stockEntities).replaceWith(stockEntities);
+    }
+
+    /**
+     * Refreshes planner statistics after a full reload (ingestion deletes and re-inserts
+     * every row), since a stale stats snapshot would otherwise misjudge the new trigram
+     * index selectivity.
+     */
+    public Uni<Void> analyzeTable() {
+        return getSession()
+                .chain(session -> session.createNativeQuery("ANALYZE stocks").executeUpdate())
+                .replaceWithVoid();
     }
 }

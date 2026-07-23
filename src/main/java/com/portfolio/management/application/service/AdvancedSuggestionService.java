@@ -23,7 +23,7 @@ public class AdvancedSuggestionService implements GetSuggestionsAdvancedUseCase 
 
     private static final Logger LOG = Logger.getLogger(AdvancedSuggestionService.class);
 
-    private static final int FETCH_MULTIPLIER = 3;
+    private static final int FETCH_MULTIPLIER = 2;
 
     private final StockPort stockPort;
     private final List<PriorityStrategy> priorityStrategies;

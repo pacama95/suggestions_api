@@ -73,6 +73,7 @@ class FetchAndStoreStockDataServiceTest {
                 .thenReturn(Uni.createFrom().item(fetchedStocks));
         when(stockPort.deleteAll()).thenReturn(Uni.createFrom().item(2L));
         when(stockPort.saveBatch(any())).thenReturn(Uni.createFrom().item(new StocksBatchProcessingResult(2, 0)));
+        when(stockPort.analyzeTable()).thenReturn(Uni.createFrom().voidItem());
 
         FetchAndStoreStockDataUseCase.Result result = stockDataService.fetchAndStoreStocks(requestFilter)
                 .subscribe()
@@ -90,6 +91,7 @@ class FetchAndStoreStockDataServiceTest {
         assertThat(filterCaptor.getValue()).isEqualTo(requestFilter);
         verify(stockPort).deleteAll();
         verify(stockPort).saveBatch(fetchedStocks);
+        verify(stockPort).analyzeTable();
     }
 
     @Test

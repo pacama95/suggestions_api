@@ -350,8 +350,8 @@ public interface SuggestionsController {
             )
             @QueryParam("limit")
             @Min(1)
-            @Max(50)
-            @DefaultValue("10")
+            @Max(100)
+            @DefaultValue("20")
             int limit
     );
 }

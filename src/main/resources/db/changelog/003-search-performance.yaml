@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-pg-trgm-extension
+      author: portfolio-management
+      comment: >
+        Enable pg_trgm so trigram GIN indexes can be used for '%term%' searches.
+        pg_trgm is a trusted extension since PostgreSQL 13, ships with postgres:15-alpine.
+        Fallback if this extension is ever unavailable: functional B-tree indexes on
+        upper(symbol)/upper(name) still accelerate exact-match and prefix searches.
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+  - changeSet:
+      id: 003-create-stock-trigram-indexes
+      author: portfolio-management
+      comment: >
+        GIN trigram indexes matching the lower(symbol)/lower(name) LIKE '%term%'
+        expressions used by DatabaseStockRepository, so those scans stop being
+        sequential scans.
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX IF NOT EXISTS idx_stock_symbol_trgm ON stocks USING gin (lower(symbol) gin_trgm_ops);
+              CREATE INDEX IF NOT EXISTS idx_stock_name_trgm ON stocks USING gin (lower(name) gin_trgm_ops);
+
+  - changeSet:
+      id: 003-create-stock-functional-indexes
+      author: portfolio-management
+      comment: >
+        Functional B-tree indexes for the low-cardinality equality/LIKE filters
+        used by advanced search (exchange, country, currency), matching the
+        lower(...) convention the queries now use.
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX IF NOT EXISTS idx_stock_exchange_lower ON stocks (lower(exchange));
+              CREATE INDEX IF NOT EXISTS idx_stock_country_lower ON stocks (lower(country));
+              CREATE INDEX IF NOT EXISTS idx_stock_currency_lower ON stocks (lower(currency));
+
+  - changeSet:
+      id: 003-drop-redundant-stock-name-index
+      author: portfolio-management
+      comment: >
+        idx_stock_name (plain B-tree on name) is useless for contains-search and
+        is superseded by idx_stock_name_trgm for all query patterns actually used.
+      changes:
+        - dropIndex:
+            indexName: idx_stock_name
+            tableName: stocks
