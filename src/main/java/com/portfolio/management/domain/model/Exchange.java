@@ -10,28 +10,29 @@ public record Exchange(
         String country,
         String timezone,
         String currencyCode,
-        boolean isActive
+        boolean isActive,
+        Double popularityScore
 ) {
 
     /**
      * Creates a new Exchange with default active state
      */
     public static Exchange of(String code, String name, String country, String currencyCode) {
-        return new Exchange(null, code, name, country, null, currencyCode, true);
+        return new Exchange(null, code, name, country, null, currencyCode, true, 0.0);
     }
 
     /**
      * Creates an Exchange with timezone
      */
     public static Exchange of(String code, String name, String country, String timezone, String currencyCode) {
-        return new Exchange(null, code, name, country, timezone, currencyCode, true);
+        return new Exchange(null, code, name, country, timezone, currencyCode, true, 0.0);
     }
 
     /**
      * Creates an Exchange with explicit active state
      */
     public static Exchange of(Long id, String code, String name, String country, String timezone, String currencyCode, boolean isActive) {
-        return new Exchange(id, code, name, country, timezone, currencyCode, isActive);
+        return new Exchange(id, code, name, country, timezone, currencyCode, isActive, 0.0);
     }
 
     /**

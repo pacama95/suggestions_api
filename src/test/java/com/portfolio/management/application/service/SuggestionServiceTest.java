@@ -305,7 +305,80 @@ class SuggestionServiceTest {
         assertThat(successResult.query()).isEqualTo("AAPL"); // Query is trimmed in the service
     }
 
+    @Test
+    @DisplayName("Should rank the more popular stock first within the same priority tier")
+    void shouldRankMorePopularStockFirstWithinSameTier() {
+        // Given
+        Stock lessPopular = createStockWithPopularity("APPH", "Apple Hospitality REIT", 10.0);
+        Stock morePopular = createStockWithPopularity("AAPL", "Apple Inc.", 120.0);
+        List<Stock> candidates = List.of(lessPopular, morePopular);
+
+        GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("Apple", 10);
+
+        when(mockStockPort.findCandidateStocks(eq("Apple"), eq(20)))
+                .thenReturn(Uni.createFrom().item(candidates));
+
+        // Both match the same (name) strategy tier, in "database order" (less popular first)
+        when(mockSymbolStrategy.matches(eq(candidates), eq("Apple")))
+                .thenReturn(List.of());
+        when(mockNameStrategy.matches(eq(candidates), eq("Apple")))
+                .thenReturn(List.of(lessPopular, morePopular));
+
+        // When
+        GetSuggestionsUseCase.Result result = service.execute(query)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        // Then
+        GetSuggestionsUseCase.Result.Success successResult =
+                (GetSuggestionsUseCase.Result.Success) result;
+
+        assertThat(successResult.suggestions()).hasSize(2);
+        assertThat(successResult.suggestions().get(0).symbol()).isEqualTo("AAPL");
+        assertThat(successResult.suggestions().get(1).symbol()).isEqualTo("APPH");
+    }
+
+    @Test
+    @DisplayName("Should never let a popular fuzzy match outrank an exact match from a higher-priority tier")
+    void shouldNeverLetPopularityOverrideMatchQualityPriority() {
+        // Given
+        Stock exactMatch = createStockWithPopularity("APP", "App Inc.", 0.0); // unpopular exact symbol match
+        Stock popularFuzzyMatch = createStockWithPopularity("AAPL", "Apple Inc.", 100.0); // popular but lower-priority tier
+
+        List<Stock> candidates = List.of(exactMatch, popularFuzzyMatch);
+        GetSuggestionsUseCase.Query query = new GetSuggestionsUseCase.Query("APP", 10);
+
+        when(mockStockPort.findCandidateStocks(eq("APP"), eq(20)))
+                .thenReturn(Uni.createFrom().item(candidates));
+
+        // Symbol strategy (priority 1) matches only the unpopular exact match
+        when(mockSymbolStrategy.matches(eq(candidates), eq("APP")))
+                .thenReturn(List.of(exactMatch));
+        // Name strategy (priority 2) matches only the popular fuzzy match
+        when(mockNameStrategy.matches(eq(candidates), eq("APP")))
+                .thenReturn(List.of(popularFuzzyMatch));
+
+        // When
+        GetSuggestionsUseCase.Result result = service.execute(query)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        // Then
+        GetSuggestionsUseCase.Result.Success successResult =
+                (GetSuggestionsUseCase.Result.Success) result;
+
+        assertThat(successResult.suggestions()).hasSize(2);
+        assertThat(successResult.suggestions().get(0).symbol()).isEqualTo("APP");
+        assertThat(successResult.suggestions().get(1).symbol()).isEqualTo("AAPL");
+    }
+
     private Stock createStock(String symbol, String name) {
         return Stock.of(1L, symbol, name, "USD", "NYSE", "MIC", "US", "CS", "FIGI", "CFI", "ISIN", "CUSIP", 1L);
+    }
+
+    private Stock createStockWithPopularity(String symbol, String name, double popularityScore) {
+        return new Stock(1L, symbol, name, "USD", "NYSE", "MIC", "US", "CS", "FIGI", "CFI", "ISIN", "CUSIP", 1L, popularityScore);
     }
 }

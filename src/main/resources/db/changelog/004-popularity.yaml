@@ -1,0 +1,144 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-stock-popularity-table
+      author: portfolio-management
+      comment: >
+        Survivor table for stock popularity signal, keyed by symbol only (not by
+        stocks.id) so it survives the full delete-all/re-insert that ingestion
+        performs on every reload. static_score is curated at seed time; tx_count
+        is incremented by the transaction-events consumer.
+      changes:
+        - createTable:
+            tableName: stock_popularity
+            columns:
+              - column:
+                  name: symbol
+                  type: VARCHAR(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: static_score
+                  type: NUMERIC(10,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tx_count
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+
+  - changeSet:
+      id: 004-add-popularity-score-columns
+      author: portfolio-management
+      comment: >
+        Denormalized, recomputable ORDER BY tie-breaker columns. Always derived
+        from stock_popularity/exchange tiers - never edited directly - so they
+        can be blown away and recomputed at will (e.g. after an ingestion reload).
+      changes:
+        - addColumn:
+            tableName: stocks
+            columns:
+              - column:
+                  name: popularity_score
+                  type: NUMERIC(10,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: exchanges
+            columns:
+              - column:
+                  name: popularity_score
+                  type: NUMERIC(10,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: currencies
+            columns:
+              - column:
+                  name: popularity_score
+                  type: NUMERIC(10,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 004-seed-exchange-popularity
+      author: portfolio-management
+      comment: Curated exchange tiers - major global exchanges rank above regional/minor ones.
+      changes:
+        - sql:
+            sql: |
+              UPDATE exchanges SET popularity_score = 100 WHERE code IN ('NASDAQ', 'NYSE');
+              UPDATE exchanges SET popularity_score = 70 WHERE code IN ('LSE', 'XETR', 'Euronext', 'HKEX', 'JPX', 'ASX');
+              UPDATE exchanges SET popularity_score = 50 WHERE code IN ('SSE', 'SZSE', 'NSE', 'BSE', 'KRX', 'BME', 'MTA', 'OMX', 'Bovespa', 'BMV', 'FSX');
+              UPDATE exchanges SET popularity_score = 20 WHERE code IN ('XSTU', 'TWSE', 'Munich', 'XDUS', 'XBER', 'VSE', 'XHAN', 'SET', 'NEO', 'CXA', 'TSXV');
+
+  - changeSet:
+      id: 004-seed-currency-popularity
+      author: portfolio-management
+      comment: Curated currency tiers, mirroring DatabaseCurrencyRepository's MAJOR_CURRENCIES notion.
+      changes:
+        - sql:
+            sql: |
+              UPDATE currencies SET popularity_score = 100 WHERE code = 'USD';
+              UPDATE currencies SET popularity_score = 90 WHERE code = 'EUR';
+              UPDATE currencies SET popularity_score = 70 WHERE code = 'JPY';
+              UPDATE currencies SET popularity_score = 60 WHERE code IN ('CAD', 'AUD');
+              UPDATE currencies SET popularity_score = 50 WHERE code IN ('CNY', 'HKD');
+              UPDATE currencies SET popularity_score = 40 WHERE code IN ('INR', 'KRW');
+              UPDATE currencies SET popularity_score = 30 WHERE code = 'TWD';
+
+  - changeSet:
+      id: 004-seed-stock-popularity
+      author: portfolio-management
+      comment: >
+        Curated static baseline for household-name tickers, so popularity ordering
+        works correctly before any transaction events have ever been consumed.
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO stock_popularity (symbol, static_score) VALUES
+                ('AAPL', 100), ('MSFT', 95), ('GOOGL', 90), ('GOOG', 90), ('AMZN', 90),
+                ('NVDA', 90), ('META', 85), ('TSLA', 85), ('BRK.B', 80), ('JPM', 78),
+                ('V', 78), ('MA', 76), ('JNJ', 75), ('WMT', 75), ('PG', 74),
+                ('UNH', 73), ('HD', 72), ('DIS', 72), ('NFLX', 72), ('KO', 71),
+                ('PEP', 70), ('BAC', 70), ('XOM', 69), ('CVX', 68), ('ADBE', 68),
+                ('CRM', 67), ('ORCL', 66), ('INTC', 65), ('AMD', 65), ('PYPL', 63),
+                ('CSCO', 62), ('ABT', 61), ('NKE', 61), ('MCD', 60), ('T', 58),
+                ('VZ', 58), ('QCOM', 58), ('IBM', 56), ('GE', 55), ('BA', 55)
+              ON CONFLICT (symbol) DO NOTHING;
+
+  - changeSet:
+      id: 004-recompute-stock-popularity-scores
+      author: portfolio-management
+      comment: >
+        Folds the seeded stock/exchange popularity into stocks.popularity_score.
+        No-op on a fresh database (stocks is only populated via ingestion), but
+        keeps things consistent if this migration ever runs against a DB that
+        already has stock rows.
+      changes:
+        - sql:
+            sql: |
+              UPDATE stocks s
+              SET popularity_score = COALESCE(joined.static_score, 0)
+                                    + 0.25 * COALESCE(joined.exchange_score, 0)
+                                    + 10 * LN(1 + COALESCE(joined.tx_count, 0))
+              FROM (
+                  SELECT st.id AS stock_id,
+                         sp.static_score,
+                         sp.tx_count,
+                         e.popularity_score AS exchange_score
+                  FROM stocks st
+                  LEFT JOIN stock_popularity sp ON sp.symbol = st.symbol
+                  LEFT JOIN exchanges e ON e.code = st.exchange
+              ) AS joined
+              WHERE joined.stock_id = s.id;

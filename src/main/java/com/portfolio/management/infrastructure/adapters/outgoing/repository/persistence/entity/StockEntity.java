@@ -64,6 +64,9 @@ public class StockEntity extends PanacheEntityBase {
     @Column(name = "data_version", nullable = false)
     private Long dataVersion;
 
+    @Column(name = "popularity_score", nullable = false)
+    private Double popularityScore = 0.0;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -198,6 +201,14 @@ public class StockEntity extends PanacheEntityBase {
 
     public void setDataVersion(Long dataVersion) {
         this.dataVersion = dataVersion;
+    }
+
+    public Double getPopularityScore() {
+        return popularityScore;
+    }
+
+    public void setPopularityScore(Double popularityScore) {
+        this.popularityScore = popularityScore;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -35,7 +35,8 @@ class StockMapperTest {
                 "ESXXXX",
                 "US0378331005",
                 "037833100",
-                1L
+                1L,
+                0.0
         );
 
         // When
@@ -98,10 +99,10 @@ class StockMapperTest {
     void shouldMapStockListToStockEntityList() {
         // Given
         List<Stock> stocks = List.of(
-                new Stock(1L, "AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States", 
-                         "Common Stock", "BBG000B9XRY4", "ESXXXX", "US0378331005", "037833100", 1L),
-                new Stock(2L, "MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States", 
-                         "Common Stock", "BBG000BPH459", "ESXXXX", "US5949181045", "594918104", 1L)
+                new Stock(1L, "AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS", "United States",
+                         "Common Stock", "BBG000B9XRY4", "ESXXXX", "US0378331005", "037833100", 1L, 0.0),
+                new Stock(2L, "MSFT", "Microsoft Corporation", "USD", "NASDAQ", "XNAS", "United States",
+                         "Common Stock", "BBG000BPH459", "ESXXXX", "US5949181045", "594918104", 1L, 0.0)
         );
 
         // When
@@ -192,7 +193,8 @@ class StockMapperTest {
                 null,
                 null,
                 null,
-                1L
+                1L,
+                0.0
         );
 
         // When

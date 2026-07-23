@@ -38,11 +38,14 @@ public class CurrencyEntity extends PanacheEntityBase {
     
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-    
+
+    @Column(name = "popularity_score", nullable = false)
+    private Double popularityScore = 0.0;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     // Constructors
     public CurrencyEntity() {}
     
@@ -74,7 +77,11 @@ public class CurrencyEntity extends PanacheEntityBase {
     public Boolean getIsActive() {
         return isActive;
     }
-    
+
+    public Double getPopularityScore() {
+        return popularityScore;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -99,7 +106,11 @@ public class CurrencyEntity extends PanacheEntityBase {
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
-    
+
+    public void setPopularityScore(Double popularityScore) {
+        this.popularityScore = popularityScore;
+    }
+
     @Override
     public String toString() {
         return "CurrencyEntity{" +

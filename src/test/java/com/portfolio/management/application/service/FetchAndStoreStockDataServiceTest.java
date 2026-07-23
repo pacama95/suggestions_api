@@ -4,6 +4,7 @@ import com.portfolio.management.domain.model.Stock;
 import com.portfolio.management.domain.model.StockFilter;
 import com.portfolio.management.domain.port.incoming.FetchAndStoreStockDataUseCase;
 import com.portfolio.management.domain.port.outgoing.MarketDataPort;
+import com.portfolio.management.domain.port.outgoing.PopularityPort;
 import com.portfolio.management.domain.port.outgoing.StockPort;
 import com.portfolio.management.domain.model.StocksBatchProcessingResult;
 import io.smallrye.mutiny.Uni;
@@ -33,6 +34,9 @@ class FetchAndStoreStockDataServiceTest {
     @Mock
     StockPort stockPort;
 
+    @Mock
+    PopularityPort popularityPort;
+
     private FetchAndStoreStockDataService stockDataService;
 
     @BeforeEach
@@ -40,6 +44,7 @@ class FetchAndStoreStockDataServiceTest {
         stockDataService = new FetchAndStoreStockDataService(
                 marketDataPort,
                 stockPort,
+                popularityPort,
                 Optional.of(List.of("United States")),
                 Optional.of(List.of("NASDAQ"))
         );
@@ -73,6 +78,7 @@ class FetchAndStoreStockDataServiceTest {
                 .thenReturn(Uni.createFrom().item(fetchedStocks));
         when(stockPort.deleteAll()).thenReturn(Uni.createFrom().item(2L));
         when(stockPort.saveBatch(any())).thenReturn(Uni.createFrom().item(new StocksBatchProcessingResult(2, 0)));
+        when(popularityPort.recomputeStockScores()).thenReturn(Uni.createFrom().voidItem());
         when(stockPort.analyzeTable()).thenReturn(Uni.createFrom().voidItem());
 
         FetchAndStoreStockDataUseCase.Result result = stockDataService.fetchAndStoreStocks(requestFilter)
@@ -91,6 +97,7 @@ class FetchAndStoreStockDataServiceTest {
         assertThat(filterCaptor.getValue()).isEqualTo(requestFilter);
         verify(stockPort).deleteAll();
         verify(stockPort).saveBatch(fetchedStocks);
+        verify(popularityPort).recomputeStockScores();
         verify(stockPort).analyzeTable();
     }
 

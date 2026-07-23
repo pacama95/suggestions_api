@@ -4,6 +4,7 @@ import com.portfolio.management.domain.model.Stock;
 import com.portfolio.management.domain.model.StockFilter;
 import com.portfolio.management.domain.port.incoming.FetchAndStoreStockDataUseCase;
 import com.portfolio.management.domain.port.outgoing.MarketDataPort;
+import com.portfolio.management.domain.port.outgoing.PopularityPort;
 import com.portfolio.management.domain.port.outgoing.StockPort;
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Multi;
@@ -19,6 +20,7 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
 
     private final MarketDataPort marketDataPort;
     private final StockPort stockPort;
+    private final PopularityPort popularityPort;
     private final Optional<List<String>> defaultCountries;
     private final Optional<List<String>> defaultExchanges;
 
@@ -26,12 +28,14 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
 
     public FetchAndStoreStockDataService(MarketDataPort marketDataPort,
                                          StockPort stockPort,
+                                         PopularityPort popularityPort,
                                          @ConfigProperty(name = "stocks.fetch.filter.countries")
                                          Optional<List<String>> defaultCountries,
                                          @ConfigProperty(name = "stocks.fetch.filter.exchanges")
                                          Optional<List<String>> defaultExchanges) {
         this.marketDataPort = marketDataPort;
         this.stockPort = stockPort;
+        this.popularityPort = popularityPort;
         this.defaultCountries = defaultCountries;
         this.defaultExchanges = defaultExchanges;
     }
@@ -74,6 +78,7 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
         return clearExistingStocks()
                 .invoke(stocksCleared -> Log.infof("%d stocks cleared", stocksCleared))
                 .flatMap(ignored -> storeStocksInBatches(fetchedStocks))
+                .flatMap(ignored -> popularityPort.recomputeStockScores())
                 .flatMap(ignored -> stockPort.analyzeTable())
                 .replaceWith(() -> new Result.Success(true, fetchedStocks.size(), "Successfully fetched and stored stocks"));
     }

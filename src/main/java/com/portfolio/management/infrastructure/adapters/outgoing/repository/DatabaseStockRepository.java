@@ -37,6 +37,7 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
                 when lower(name) like ?3 then 3
                 else 4
               end,
+              popularityScore desc,
               symbol asc
             """;
 
@@ -109,6 +110,8 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
                 paramIndex++;
             }
         }
+
+        query.append(" ORDER BY popularityScore DESC, symbol ASC");
 
         return new QueryData(query.toString(), parameters);
     }

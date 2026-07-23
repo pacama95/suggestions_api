@@ -135,7 +135,7 @@ class ExchangeWebMapperTest {
     @Test
     void shouldHandleMappingExchangeWithNullTimezone() {
         // Given
-        Exchange exchangeWithNullTimezone = new Exchange(1L, "TST", "Test Exchange", "Test Country", null, "TST", true);
+        Exchange exchangeWithNullTimezone = new Exchange(1L, "TST", "Test Exchange", "Test Country", null, "TST", true, 0.0);
 
         // When
         ExchangeResponse.ExchangeDto result = exchangeWebMapper.toExchangeDto(exchangeWithNullTimezone);

@@ -109,6 +109,8 @@ public class AdvancedSuggestionService implements GetSuggestionsAdvancedUseCase 
             int remainingCapacity = totalLimit - prioritizedResults.size();
 
             matches.stream()
+                    .sorted(Comparator.comparing(Stock::popularityScore, Comparator.nullsLast(Comparator.reverseOrder()))
+                            .thenComparing(Stock::symbol))
                     .limit(remainingCapacity)
                     .forEach(prioritizedResults::add);
 

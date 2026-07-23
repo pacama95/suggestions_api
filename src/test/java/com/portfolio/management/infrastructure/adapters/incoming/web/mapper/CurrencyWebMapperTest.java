@@ -130,7 +130,7 @@ class CurrencyWebMapperTest {
     @Test
     void shouldHandleMappingCurrencyWithNullSymbol() {
         // Given
-        Currency currencyWithNullSymbol = new Currency(1L, "BTC", "Bitcoin", null, "XX", true);
+        Currency currencyWithNullSymbol = new Currency(1L, "BTC", "Bitcoin", null, "XX", true, 0.0);
 
         // When
         CurrencyResponse.CurrencyDto result = currencyWebMapper.toCurrencyDto(currencyWithNullSymbol);

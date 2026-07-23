@@ -209,7 +209,8 @@ class StockPersistenceAdapterTest {
                 "ESXXXX",
                 "US1234567890",
                 "123456789",
-                1L
+                1L,
+                0.0
         );
     }
 

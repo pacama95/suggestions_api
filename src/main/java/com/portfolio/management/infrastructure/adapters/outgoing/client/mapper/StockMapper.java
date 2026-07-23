@@ -40,6 +40,7 @@ public interface StockMapper {
     @Mapping(target = "symbol", expression = "java(twelveDataStock.getCleanedSymbol())")
     @Mapping(target = "name", expression = "java(twelveDataStock.getCleanedName())")
     @Mapping(target = "dataVersion", constant = "1L")
+    @Mapping(target = "popularityScore", constant = "0.0")
     Stock toStock(TwelveDataStockResponse.TwelveDataStock twelveDataStock);
 
 }

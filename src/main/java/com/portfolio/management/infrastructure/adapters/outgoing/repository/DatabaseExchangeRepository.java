@@ -27,7 +27,7 @@ public class DatabaseExchangeRepository implements PanacheRepository<ExchangeEnt
     @CacheResult(cacheName = "exchanges-all")
     @WithSession
     public Uni<List<ExchangeEntity>> findAllActive() {
-        return find("isActive = true", Sort.ascending("name"))
+        return find("isActive = true", Sort.descending("popularityScore").and("name"))
                 .list();
     }
 
@@ -43,7 +43,7 @@ public class DatabaseExchangeRepository implements PanacheRepository<ExchangeEnt
 
         String likeQuery = "%" + query.toLowerCase() + "%";
         return find("isActive = true AND (lower(code) LIKE ?1 OR lower(name) LIKE ?1 OR lower(country) LIKE ?1)",
-                Sort.ascending("name"), likeQuery)
+                Sort.descending("popularityScore").and("name"), likeQuery)
                 .list();
     }
 

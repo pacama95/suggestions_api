@@ -94,6 +94,8 @@ public class SuggestionService implements GetSuggestionsUseCase {
             int remainingCapacity = totalLimit - prioritizedResults.size();
 
             matches.stream()
+                    .sorted(Comparator.comparing(Stock::popularityScore, Comparator.nullsLast(Comparator.reverseOrder()))
+                            .thenComparing(Stock::symbol))
                     .limit(remainingCapacity)
                     .forEach(prioritizedResults::add);
 

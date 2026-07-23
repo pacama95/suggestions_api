@@ -16,27 +16,30 @@ public record Stock(
         String cfiCode,
         String isin,
         String cusip,
-        Long dataVersion
+        Long dataVersion,
+        Double popularityScore
 ) {
-    
+
     /**
-     * Creates a new Stock without ID (for creation scenarios)
+     * Creates a new Stock without ID (for creation scenarios). Popularity is unset (0.0)
+     * until the popularity recompute pass runs.
      */
-    public static Stock of(String symbol, String name, String currency, String exchange, 
-                          String micCode, String country, String type, String figiCode, 
+    public static Stock of(String symbol, String name, String currency, String exchange,
+                          String micCode, String country, String type, String figiCode,
                           String cfiCode, String isin, String cusip, Long dataVersion) {
-        return new Stock(null, symbol, name, currency, exchange, micCode, country, type, 
-                        figiCode, cfiCode, isin, cusip, dataVersion);
+        return new Stock(null, symbol, name, currency, exchange, micCode, country, type,
+                        figiCode, cfiCode, isin, cusip, dataVersion, 0.0);
     }
-    
+
     /**
-     * Creates a Stock with explicit ID
+     * Creates a Stock with explicit ID. Popularity is unset (0.0) until the popularity
+     * recompute pass runs.
      */
-    public static Stock of(Long id, String symbol, String name, String currency, String exchange, 
-                          String micCode, String country, String type, String figiCode, 
+    public static Stock of(Long id, String symbol, String name, String currency, String exchange,
+                          String micCode, String country, String type, String figiCode,
                           String cfiCode, String isin, String cusip, Long dataVersion) {
-        return new Stock(id, symbol, name, currency, exchange, micCode, country, type, 
-                        figiCode, cfiCode, isin, cusip, dataVersion);
+        return new Stock(id, symbol, name, currency, exchange, micCode, country, type,
+                        figiCode, cfiCode, isin, cusip, dataVersion, 0.0);
     }
     
     /**

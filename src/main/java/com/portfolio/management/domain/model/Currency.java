@@ -9,21 +9,22 @@ public record Currency(
     String name,
     String symbol,
     String countryCode,
-    boolean isActive
+    boolean isActive,
+    Double popularityScore
 ) {
-    
+
     /**
      * Creates a new Currency with default active state
      */
     public static Currency of(String code, String name, String symbol, String countryCode) {
-        return new Currency(null, code, name, symbol, countryCode, true);
+        return new Currency(null, code, name, symbol, countryCode, true, 0.0);
     }
-    
+
     /**
      * Creates a Currency with explicit active state
      */
     public static Currency of(Long id, String code, String name, String symbol, String countryCode, boolean isActive) {
-        return new Currency(id, code, name, symbol, countryCode, isActive);
+        return new Currency(id, code, name, symbol, countryCode, isActive, 0.0);
     }
     
     /**

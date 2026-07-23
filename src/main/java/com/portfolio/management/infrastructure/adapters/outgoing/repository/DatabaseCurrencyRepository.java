@@ -23,10 +23,10 @@ public class DatabaseCurrencyRepository implements PanacheRepository<CurrencyEnt
      */
     @CacheResult(cacheName = "currencies-all")
     public Uni<List<CurrencyEntity>> findAllActive() {
-        return find("isActive = true", Sort.ascending("code"))
+        return find("isActive = true", Sort.descending("popularityScore").and("code"))
                .list();
     }
-    
+
     /**
      * Search currencies by query string - matches code, name, or country code
      */
@@ -35,10 +35,10 @@ public class DatabaseCurrencyRepository implements PanacheRepository<CurrencyEnt
         if (query == null || query.trim().isEmpty()) {
             return findAllActive();
         }
-        
+
         String likeQuery = "%" + query.toLowerCase() + "%";
-        return find("isActive = true AND (lower(code) LIKE ?1 OR lower(name) LIKE ?1 OR lower(countryCode) LIKE ?1)", 
-                   Sort.ascending("code"), likeQuery)
+        return find("isActive = true AND (lower(code) LIKE ?1 OR lower(name) LIKE ?1 OR lower(countryCode) LIKE ?1)",
+                   Sort.descending("popularityScore").and("code"), likeQuery)
                .list();
     }
     

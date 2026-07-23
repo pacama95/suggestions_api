@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/002-create-categories-tables.yaml
   - include:
       file: db/changelog/003-search-performance.yaml
+  - include:
+      file: db/changelog/004-popularity.yaml
