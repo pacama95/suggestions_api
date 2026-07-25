@@ -8,22 +8,25 @@ import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.quarkus.redis.datasource.stream.ReactiveStreamCommands;
 import io.quarkus.redis.datasource.stream.StreamMessage;
 import io.quarkus.redis.datasource.stream.XReadGroupArgs;
+import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.Cancellable;
+import io.vertx.core.Context;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Consumes transaction:created from Redis Streams to feed the popularity
  * signal. Publisher-agnostic: reads its own consumer group regardless of
  * which service XADDs to the stream.
- *
+ * <p>
  * At-least-once, ack-on-handled: every message is acknowledged once a
  * result (success, ignored, error, or parse failure) is reached - there is
  * no DLQ or replay ladder, since a rare double-counted or dropped
@@ -69,7 +72,7 @@ public class TransactionCreatedConsumer {
 
         return createPipeline()
                 .subscribe().with(
-                        messageId -> Log.debugf("Processed message %s from stream %s", messageId, STREAM_NAME),
+                        messageId -> Log.infof("Processed message %s from stream %s", messageId, STREAM_NAME),
                         failure -> Log.errorf(failure, "Consumer pipeline for stream %s terminated", STREAM_NAME),
                         () -> Log.warnf("Consumer pipeline for stream %s completed unexpectedly", STREAM_NAME));
     }
@@ -113,13 +116,24 @@ public class TransactionCreatedConsumer {
         String messageId = message.id();
         Map<String, String> fields = message.payload();
 
-        return parseCommand(fields)
+        // The use case writes through Panache's @WithTransaction, which requires a Vert.x
+        // duplicated context.
+        return Uni.createFrom().voidItem()
+                .emitOn(duplicatedContextExecutor())
+                .onItem().transformToUni(ignored -> parseCommand(fields))
                 .onItem().transformToUni(recordStockUsageUseCase::execute)
                 .onItem().invoke(result -> logResult(messageId, result))
                 .onFailure().invoke(throwable ->
-                        Log.warnf(throwable, "Skipping unparseable message %s on stream %s", messageId, STREAM_NAME))
+                        Log.warnf(throwable, "Skipping message %s on stream %s", messageId, STREAM_NAME))
                 .onFailure().recoverWithItem((RecordStockUsageUseCase.Result) null)
                 .onItem().transformToUni(ignored -> acknowledge(messageId));
+    }
+
+    private static Executor duplicatedContextExecutor() {
+        Context context = VertxContext.getOrCreateDuplicatedContext();
+        return context == null
+                ? Runnable::run
+                : action -> context.runOnContext(ignored -> action.run());
     }
 
     private Uni<RecordStockUsageUseCase.Command> parseCommand(Map<String, String> fields) {
