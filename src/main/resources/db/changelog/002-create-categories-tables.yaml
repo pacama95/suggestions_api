@@ -220,7 +220,7 @@ databaseChangeLog:
   - changeSet:
       id: 002-insert-currencies-data
       author: portfolio-management
-      comment: Insert top 10 most popular currencies
+      comment: Insert supported currencies
       changes:
         - insert:
             tableName: currencies
@@ -252,6 +252,21 @@ databaseChangeLog:
               - column:
                   name: country_code
                   value: "US"
+        - insert:
+            tableName: currencies
+            columns:
+              - column:
+                  name: code
+                  value: "GBP"
+              - column:
+                  name: name
+                  value: "British Pound"
+              - column:
+                  name: symbol
+                  value: "£"
+              - column:
+                  name: country_code
+                  value: "GB"
         - insert:
             tableName: currencies
             columns:

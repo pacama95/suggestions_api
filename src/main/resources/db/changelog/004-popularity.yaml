@@ -91,6 +91,7 @@ databaseChangeLog:
             sql: |
               UPDATE currencies SET popularity_score = 100 WHERE code = 'USD';
               UPDATE currencies SET popularity_score = 90 WHERE code = 'EUR';
+              UPDATE currencies SET popularity_score = 80 WHERE code = 'GBP';
               UPDATE currencies SET popularity_score = 70 WHERE code = 'JPY';
               UPDATE currencies SET popularity_score = 60 WHERE code IN ('CAD', 'AUD');
               UPDATE currencies SET popularity_score = 50 WHERE code IN ('CNY', 'HKD');

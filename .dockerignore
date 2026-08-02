@@ -1,0 +1,13 @@
+.git
+.gradle
+.idea
+.claude
+.vscode
+bin
+build
+target
+out
+*.iml
+*.log
+.DS_Store
+
