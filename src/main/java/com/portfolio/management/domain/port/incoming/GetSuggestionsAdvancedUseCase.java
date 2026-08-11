@@ -14,7 +14,8 @@ public interface GetSuggestionsAdvancedUseCase {
     Uni<Result> execute(Query query);
 
 
-    record Query(String symbol, String companyName, String exchange, String country, String currency, int limit) {
+    record Query(String symbol, String companyName, String exchange, String country, String currency, String isin,
+                 int limit) {
 
         public Query {
             if (limit <= 0 || limit > 100) {
@@ -26,8 +27,17 @@ public interface GetSuggestionsAdvancedUseCase {
                      String companyName,
                      String exchange,
                      String country,
+                     String currency,
+                     int limit) {
+            this(symbol, companyName, exchange, country, currency, null, limit);
+        }
+
+        public Query(String symbol,
+                     String companyName,
+                     String exchange,
+                     String country,
                      String currency) {
-            this(symbol, companyName, exchange, country, currency, 10); // Default limit
+            this(symbol, companyName, exchange, country, currency, null, 10); // Default limit
         }
 
         /**
@@ -35,7 +45,7 @@ public interface GetSuggestionsAdvancedUseCase {
          */
         public boolean hasSearchCriteria() {
             return isNotBlank(symbol) || isNotBlank(companyName) || isNotBlank(exchange) ||
-                    isNotBlank(country) || isNotBlank(currency);
+                    isNotBlank(country) || isNotBlank(currency) || isNotBlank(isin);
         }
 
         private boolean isNotBlank(String str) {
@@ -52,6 +62,7 @@ public interface GetSuggestionsAdvancedUseCase {
             if (isNotBlank(exchange)) description.append(" exchange:").append(exchange);
             if (isNotBlank(country)) description.append(" country:").append(country);
             if (isNotBlank(currency)) description.append(" currency:").append(currency);
+            if (isNotBlank(isin)) description.append(" isin:").append(isin);
             return description.toString();
         }
     }

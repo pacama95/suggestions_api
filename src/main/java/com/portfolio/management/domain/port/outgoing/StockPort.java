@@ -14,7 +14,7 @@ public interface StockPort {
 
     Uni<List<Stock>> findCandidateStocks(String query, int limit);
 
-    Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String region, String currency, int limit);
+    Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String region, String currency, String isin, int limit);
 
     Uni<Long> deleteAll();
 

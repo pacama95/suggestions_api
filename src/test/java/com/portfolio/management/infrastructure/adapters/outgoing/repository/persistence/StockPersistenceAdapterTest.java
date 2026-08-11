@@ -44,16 +44,17 @@ class StockPersistenceAdapterTest {
         String exchange = "NASDAQ";
         String country = "United States";
         String currency = "USD";
+        String isin = null;
         int limit = 25;
         var stockEntities = List.of(createStockEntity("AAPL", "Apple Inc."));
         var expectedStocks = List.of(createStock("AAPL", "Apple Inc."));
 
-        when(mockDatabaseRepository.findByAdvancedSearch(symbol, companyName, exchange, country, currency, limit))
+        when(mockDatabaseRepository.findByAdvancedSearch(symbol, companyName, exchange, country, currency, isin, limit))
                 .thenReturn(Uni.createFrom().item(stockEntities));
         when(mockStockMapper.toStocks(stockEntities)).thenReturn(expectedStocks);
 
         // When
-        List<Stock> result = stockPersistenceAdapter.findByAdvancedSearch(symbol, companyName, exchange, country, currency, limit)
+        List<Stock> result = stockPersistenceAdapter.findByAdvancedSearch(symbol, companyName, exchange, country, currency, isin, limit)
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .getItem();
@@ -63,7 +64,7 @@ class StockPersistenceAdapterTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().symbol()).isEqualTo("AAPL");
 
-        verify(mockDatabaseRepository).findByAdvancedSearch(eq(symbol), eq(companyName), eq(exchange), eq(country), eq(currency), eq(limit));
+        verify(mockDatabaseRepository).findByAdvancedSearch(eq(symbol), eq(companyName), eq(exchange), eq(country), eq(currency), eq(isin), eq(limit));
         verify(mockStockMapper).toStocks(eq(stockEntities));
     }
 

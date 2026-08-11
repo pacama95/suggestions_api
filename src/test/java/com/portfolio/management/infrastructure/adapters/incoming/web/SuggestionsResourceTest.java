@@ -65,7 +65,7 @@ class SuggestionsResourceTest {
             .thenReturn(mockErrorDetails);
 
         // When
-        Uni<Response> response = suggestionsResource.advancedSearch("AAPL", null, null, null, null, 10);
+        Uni<Response> response = suggestionsResource.advancedSearch("AAPL", null, null, null, null, null, 10);
         Response result = response.await().atMost(Duration.ofSeconds(5));
 
         // Then
@@ -88,7 +88,7 @@ class SuggestionsResourceTest {
             .thenReturn(Uni.createFrom().failure(new RuntimeException("Service unavailable")));
 
         // When
-        Uni<Response> response = suggestionsResource.advancedSearch("AAPL", null, null, null, null, 10);
+        Uni<Response> response = suggestionsResource.advancedSearch("AAPL", null, null, null, null, null, 10);
         Response result = response.await().atMost(Duration.ofSeconds(5));
 
         // Then

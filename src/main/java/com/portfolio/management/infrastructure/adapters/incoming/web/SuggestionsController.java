@@ -338,6 +338,14 @@ public interface SuggestionsController {
             String currency,
 
             @Parameter(
+                    description = "ISIN to search for (e.g., 'US0378331005'). Exact match only, case-insensitive.",
+                    required = false,
+                    example = "US0378331005"
+            )
+            @QueryParam("isin")
+            String isin,
+
+            @Parameter(
                     description = "Maximum number of results to return. Must be between 1 and 100.",
                     required = false,
                     schema = @Schema(

@@ -83,7 +83,13 @@ public record SuggestionsResponse(
                     description = "Trading currency",
                     example = "USD"
             )
-            String currency
+            String currency,
+
+            @Schema(
+                    description = "International Securities Identification Number",
+                    example = "US0378331005"
+            )
+            String isin
     ) {
     }
 }

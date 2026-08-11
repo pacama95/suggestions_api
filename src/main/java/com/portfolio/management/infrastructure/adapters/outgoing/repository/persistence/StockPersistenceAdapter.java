@@ -89,8 +89,8 @@ public class StockPersistenceAdapter implements StockPort {
     @Override
     @CacheResult(cacheName = "stock-advanced-search")
     @WithSession
-    public Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String country, String currency, int limit) {
-        return databaseStockRepository.findByAdvancedSearch(symbol, companyName, exchange, country, currency, limit)
+    public Uni<List<Stock>> findByAdvancedSearch(String symbol, String companyName, String exchange, String country, String currency, String isin, int limit) {
+        return databaseStockRepository.findByAdvancedSearch(symbol, companyName, exchange, country, currency, isin, limit)
                 .map(stockMapper::toStocks);
     }
 

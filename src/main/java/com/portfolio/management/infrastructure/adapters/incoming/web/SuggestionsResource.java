@@ -50,17 +50,17 @@ public class SuggestionsResource implements SuggestionsController {
     }
 
     @Override
-    public Uni<Response> advancedSearch(String symbol, String companyName, String exchange, String country, String currency, int limit) {
+    public Uni<Response> advancedSearch(String symbol, String companyName, String exchange, String country, String currency, String isin, int limit) {
         // Validate at least one search parameter is provided
-        if (isBlank(symbol) && isBlank(companyName) && isBlank(exchange) && isBlank(country) && isBlank(currency)) {
+        if (isBlank(symbol) && isBlank(companyName) && isBlank(exchange) && isBlank(country) && isBlank(currency) && isBlank(isin)) {
             var errorResponse = ErrorResponse.of("At least one search parameter must be provided");
             return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build());
         }
 
-        LOG.infof("Advanced search request - symbol: %s, companyName: %s, exchange: %s, country: %s, currency: %s, limit: %d",
-                symbol, companyName, exchange, country, currency, limit);
+        LOG.infof("Advanced search request - symbol: %s, companyName: %s, exchange: %s, country: %s, currency: %s, isin: %s, limit: %d",
+                symbol, companyName, exchange, country, currency, isin, limit);
 
-        return Uni.createFrom().item(() -> new GetSuggestionsAdvancedUseCase.Query(symbol, companyName, exchange, country, currency, limit))
+        return Uni.createFrom().item(() -> new GetSuggestionsAdvancedUseCase.Query(symbol, companyName, exchange, country, currency, isin, limit))
                 .flatMap(getSuggestionsAdvancedUseCase::execute)
                 .onItem().transform(this::mapToHttpResponse)
                 .onFailure().recoverWithItem(throwable -> {

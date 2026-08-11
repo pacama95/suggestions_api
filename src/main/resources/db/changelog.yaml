@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/003-search-performance.yaml
   - include:
       file: db/changelog/004-popularity.yaml
+  - include:
+      file: db/changelog/005-isin-search.yaml

@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-stock-isin-index
+      author: portfolio-management
+      comment: >
+        Functional B-tree index on upper(isin), matching the exact-match
+        upper(isin) = upper(?) expression used by advanced search. isin is
+        unindexed today and production holds the full provider universe,
+        not the harness's handful of rows.
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX IF NOT EXISTS idx_stock_isin_upper ON stocks (upper(isin));

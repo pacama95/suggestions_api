@@ -22,6 +22,7 @@ public class QueryFieldExtractor {
             case EXCHANGE -> query.exchange();
             case COUNTRY -> query.country();
             case CURRENCY -> query.currency();
+            case ISIN -> query.isin();
             case TYPE -> null; // Type not available in current query
         };
     }

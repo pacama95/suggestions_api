@@ -77,7 +77,7 @@ class AdvancedSuggestionServiceTest {
         // Given
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("AAPL", null, null, null, null, 10);
 
-        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), isNull(), isNull(), isNull(), isNull(), eq(20)))
+        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), isNull(), isNull(), isNull(), isNull(), isNull(), eq(20)))
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))
@@ -110,7 +110,7 @@ class AdvancedSuggestionServiceTest {
         // Given
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("NONEXISTENT", null, null, null, null, 10);
 
-        when(mockStockPort.findByAdvancedSearch(eq("NONEXISTENT"), isNull(), isNull(), isNull(), isNull(), eq(20)))
+        when(mockStockPort.findByAdvancedSearch(eq("NONEXISTENT"), isNull(), isNull(), isNull(), isNull(), isNull(), eq(20)))
                 .thenReturn(Uni.createFrom().item(List.of()));
 
         // When
@@ -175,7 +175,7 @@ class AdvancedSuggestionServiceTest {
         // Given
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("AAPL", null, null, null, null, 10);
 
-        when(mockStockPort.findByAdvancedSearch(anyString(), any(), any(), any(), any(), anyInt()))
+        when(mockStockPort.findByAdvancedSearch(anyString(), any(), any(), any(), any(), any(), anyInt()))
                 .thenReturn(Uni.createFrom().failure(new RuntimeException("Database connection failed")));
 
         // When
@@ -202,7 +202,7 @@ class AdvancedSuggestionServiceTest {
         // Given
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("AAPL", "Apple", null, null, null, 10);
 
-        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), eq("Apple"), isNull(), isNull(), isNull(), eq(20)))
+        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), eq("Apple"), isNull(), isNull(), isNull(), isNull(), eq(20)))
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))
@@ -240,7 +240,7 @@ class AdvancedSuggestionServiceTest {
 
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("APP", null, null, null, null, 2);
 
-        when(mockStockPort.findByAdvancedSearch(eq("APP"), isNull(), isNull(), isNull(), isNull(), eq(4)))
+        when(mockStockPort.findByAdvancedSearch(eq("APP"), isNull(), isNull(), isNull(), isNull(), isNull(), eq(4)))
                 .thenReturn(Uni.createFrom().item(manyStocks));
 
         when(mockSymbolStrategy.matches(eq(manyStocks), eq("APP")))
@@ -268,7 +268,7 @@ class AdvancedSuggestionServiceTest {
         // Given
         GetSuggestionsAdvancedUseCase.Query query = createAdvancedQuery("AAPL", null, null, null, null, 10);
 
-        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), isNull(), isNull(), isNull(), isNull(), eq(20)))
+        when(mockStockPort.findByAdvancedSearch(eq("AAPL"), isNull(), isNull(), isNull(), isNull(), isNull(), eq(20)))
                 .thenReturn(Uni.createFrom().item(testStocks));
 
         when(mockSymbolStrategy.matches(eq(testStocks), eq("AAPL")))

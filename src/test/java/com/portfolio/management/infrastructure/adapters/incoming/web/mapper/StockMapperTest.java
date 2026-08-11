@@ -51,6 +51,7 @@ class StockMapperTest {
         assertThat(result.type()).isEqualTo("Common Stock");
         assertThat(result.country()).isEqualTo("United States");
         assertThat(result.currency()).isEqualTo("USD");
+        assertThat(result.isin()).isEqualTo("US0378331005");
     }
 
     @Test

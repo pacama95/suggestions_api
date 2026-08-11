@@ -9,5 +9,6 @@ public enum SearchField {
     EXCHANGE,
     TYPE,
     COUNTRY,
-    CURRENCY
+    CURRENCY,
+    ISIN
 }

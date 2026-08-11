@@ -55,7 +55,7 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
     }
 
     public Uni<List<StockEntity>> findByAdvancedSearch(
-            String symbol, String companyName, String exchange, String country, String currency, int limit) {
+            String symbol, String companyName, String exchange, String country, String currency, String isin, int limit) {
 
         Map<String, String> searchCriteria = new HashMap<>();
         if (symbol != null) searchCriteria.put("symbol", symbol);
@@ -63,6 +63,7 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
         if (exchange != null) searchCriteria.put("exchange", exchange);
         if (country != null) searchCriteria.put("country", country);
         if (currency != null) searchCriteria.put("currency", currency);
+        if (isin != null) searchCriteria.put("isin", isin);
 
         return findByAdvancedSearch(searchCriteria, limit);
     }
@@ -96,17 +97,24 @@ public class DatabaseStockRepository implements PanacheRepository<StockEntity> {
                 "name", "name",
                 "exchange", "exchange",
                 "country", "country",
-                "currency", "currency"
+                "currency", "currency",
+                "isin", "isin"
         );
 
+        // isin is a precise identifier, not free text: exact match only, never LIKE.
         for (Map.Entry<String, String> entry : searchCriteria.entrySet()) {
             String field = entry.getKey();
             String value = entry.getValue();
 
             if (value != null && !value.trim().isEmpty() && fieldMapping.containsKey(field)) {
                 String entityField = fieldMapping.get(field);
-                query.append(" AND lower(").append(entityField).append(") LIKE lower(?").append(paramIndex).append(")");
-                parameters.add("%" + value.trim() + "%");
+                if ("isin".equals(field)) {
+                    query.append(" AND upper(").append(entityField).append(") = upper(?").append(paramIndex).append(")");
+                    parameters.add(value.trim());
+                } else {
+                    query.append(" AND lower(").append(entityField).append(") LIKE lower(?").append(paramIndex).append(")");
+                    parameters.add("%" + value.trim() + "%");
+                }
                 paramIndex++;
             }
         }

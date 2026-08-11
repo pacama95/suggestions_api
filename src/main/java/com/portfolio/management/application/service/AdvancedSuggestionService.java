@@ -77,6 +77,7 @@ public class AdvancedSuggestionService implements GetSuggestionsAdvancedUseCase 
                         query.exchange(),
                         query.country(),
                         query.currency(),
+                        query.isin(),
                         limit * FETCH_MULTIPLIER)
                 .onItem().transform(candidates -> {
                     LOG.infof("Found %d candidate stocks for advanced search: %s", candidates.size(), searchDescription);
