@@ -23,5 +23,6 @@ public interface TwelveDataClient {
     @Path("/etfs")
     Uni<TwelveDataStockResponse> getEtfs(@QueryParam("apikey") String apiKey,
                                          @QueryParam("exchange") String exchange,
-                                         @QueryParam("country") String country);
+                                         @QueryParam("country") String country,
+                                         @QueryParam("symbol") String symbol);
 }

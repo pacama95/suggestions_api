@@ -86,7 +86,7 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
         List<String> exchanges = hasValues(requestFilter.exchanges())
                 ? requestFilter.exchanges()
                 : defaultExchanges.orElse(List.of());
-        return new StockFilter(countries, exchanges);
+        return new StockFilter(countries, exchanges, requestFilter.symbols() != null ? requestFilter.symbols() : List.of());
     }
 
     private boolean hasValues(List<String> values) {

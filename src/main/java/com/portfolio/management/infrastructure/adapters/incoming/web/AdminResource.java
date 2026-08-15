@@ -43,10 +43,11 @@ public class AdminResource implements AdminController {
     }
 
     @Override
-    public Uni<Response> fetchEtfs(List<String> countries, List<String> exchanges) {
+    public Uni<Response> fetchEtfs(List<String> countries, List<String> exchanges, List<String> symbols) {
         StockFilter filter = new StockFilter(
                 countries != null ? countries : List.of(),
-                exchanges != null ? exchanges : List.of()
+                exchanges != null ? exchanges : List.of(),
+                symbols != null ? symbols : List.of()
         );
 
         return fetchAndStoreStockDataUseCase.fetchAndStoreEtfs(filter)

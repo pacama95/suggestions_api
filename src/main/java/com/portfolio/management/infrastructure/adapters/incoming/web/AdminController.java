@@ -87,9 +87,10 @@ public interface AdminController {
         summary = "Fetch ETFs from TwelveData API and append them to the catalog",
         description = "Administrative endpoint to ingest ETF listings from the TwelveData API " +
                      "without deleting existing stocks. " +
-                     "Supports optional country and exchange filters (repeatable query params). " +
-                     "When omitted, configured defaults from application.properties are used; " +
-                     "if no defaults are set, all available ETFs are fetched. " +
+                     "Supports optional country, exchange, and symbol filters (repeatable query params). " +
+                     "Prefer symbol (and/or country) filters instead of an unfiltered pull. " +
+                     "When country/exchange are omitted, configured defaults from application.properties are used; " +
+                     "if no defaults are set, those dimensions are unfiltered. " +
                      "A full POST /admin/fetch-stocks refresh already includes ETFs."
     )
     @APIResponses({
@@ -122,5 +123,6 @@ public interface AdminController {
         )
     })
     Uni<Response> fetchEtfs(@QueryParam("country") List<String> countries,
-                            @QueryParam("exchange") List<String> exchanges);
+                            @QueryParam("exchange") List<String> exchanges,
+                            @QueryParam("symbol") List<String> symbols);
 }

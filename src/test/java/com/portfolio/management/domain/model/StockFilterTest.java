@@ -16,6 +16,7 @@ class StockFilterTest {
 
         assertThat(filter.countries()).isEmpty();
         assertThat(filter.exchanges()).isEmpty();
+        assertThat(filter.symbols()).isEmpty();
         assertThat(filter.isEmpty()).isTrue();
     }
 
@@ -33,5 +34,14 @@ class StockFilterTest {
         StockFilter filter = new StockFilter(List.of(), List.of("NASDAQ"));
 
         assertThat(filter.isEmpty()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should not be empty when symbol filter is present")
+    void shouldNotBeEmptyWhenSymbolFilterIsPresent() {
+        StockFilter filter = new StockFilter(List.of(), List.of(), List.of("IQQD"));
+
+        assertThat(filter.isEmpty()).isFalse();
+        assertThat(filter.symbols()).containsExactly("IQQD");
     }
 }

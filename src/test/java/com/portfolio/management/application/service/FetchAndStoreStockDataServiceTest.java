@@ -70,6 +70,15 @@ class FetchAndStoreStockDataServiceTest {
     }
 
     @Test
+    @DisplayName("Should keep requested ETF symbols when merging defaults")
+    void shouldKeepRequestedEtfSymbolsWhenMergingDefaults() {
+        StockFilter requestFilter = new StockFilter(List.of("Germany"), List.of("XETR"), List.of("IQQD", "ISPA"));
+        StockFilter expectedFilter = new StockFilter(List.of("Germany"), List.of("XETR"), List.of("IQQD", "ISPA"));
+
+        assertThat(stockDataService.mergeWithDefaults(requestFilter)).isEqualTo(expectedFilter);
+    }
+
+    @Test
     @DisplayName("Should fetch and store stocks successfully")
     void shouldFetchAndStoreStocksSuccessfully() {
         List<Stock> fetchedStocks = List.of(createStock("AAPL"), createStock("MSFT"));

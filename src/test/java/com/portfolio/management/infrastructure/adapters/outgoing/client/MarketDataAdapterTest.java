@@ -41,7 +41,7 @@ class MarketDataAdapterTest {
     void setUp() {
         marketDataAdapter = new MarketDataAdapter(mockClient, mockStockMapper, apiKey);
         var emptyEtfs = new TwelveDataStockResponse(List.of(), "ok");
-        lenient().when(mockClient.getEtfs(eq(apiKey), nullable(String.class), nullable(String.class)))
+        lenient().when(mockClient.getEtfs(eq(apiKey), nullable(String.class), nullable(String.class), nullable(String.class)))
                 .thenReturn(Uni.createFrom().item(emptyEtfs));
         lenient().when(mockStockMapper.toEtfs(emptyEtfs)).thenReturn(Collections.emptyList());
     }
@@ -259,7 +259,7 @@ class MarketDataAdapterTest {
 
         when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(stocksResponse));
         when(mockStockMapper.toStocks(stocksResponse)).thenReturn(List.of(createStock("AAPL", "Apple Inc.")));
-        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
+        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
         when(mockStockMapper.toEtfs(etfsResponse)).thenReturn(List.of(iqqd));
 
         List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
@@ -269,7 +269,7 @@ class MarketDataAdapterTest {
 
         assertThat(result).extracting(Stock::symbol).containsExactly("AAPL", "IQQD");
         verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
-        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull());
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -278,7 +278,7 @@ class MarketDataAdapterTest {
         var etfsResponse = new TwelveDataStockResponse(List.of(), "etfs");
         Stock vhyl = createEtf("VHYL", "Vanguard FTSE All-World High Dividend Yield UCITS ETF", "Euronext", "XAMS", "Netherlands");
 
-        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
+        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
         when(mockStockMapper.toEtfs(etfsResponse)).thenReturn(List.of(vhyl));
 
         List<Stock> result = marketDataAdapter.fetchEtfs(StockFilter.empty())
@@ -289,8 +289,39 @@ class MarketDataAdapterTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().symbol()).isEqualTo("VHYL");
         assertThat(result.getFirst().type()).isEqualTo("ETF");
-        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull());
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull(), isNull());
         verify(mockClient, never()).getStocks(eq(apiKey), nullable(String.class), nullable(String.class));
+    }
+
+    @Test
+    @DisplayName("Should fetch only requested ETF symbols")
+    void shouldFetchOnlyRequestedEtfSymbols() {
+        var iqqdResponse = new TwelveDataStockResponse(List.of(), "iqqd");
+        var vhylResponse = new TwelveDataStockResponse(List.of(), "vhyl");
+        Stock iqqd = createEtf("IQQD", "iShares STOXX Global Select Dividend 100 UCITS ETF (DE)", "XETR", "XETR", "Germany");
+        Stock vhyl = createEtf("VHYL", "Vanguard FTSE All-World High Dividend Yield UCITS ETF", "Euronext", "XAMS", "Netherlands");
+
+        when(mockClient.getEtfs(eq(apiKey), isNull(), eq("Germany"), eq("IQQD")))
+                .thenReturn(Uni.createFrom().item(iqqdResponse));
+        when(mockClient.getEtfs(eq(apiKey), isNull(), eq("Netherlands"), eq("VHYL")))
+                .thenReturn(Uni.createFrom().item(vhylResponse));
+        when(mockStockMapper.toEtfs(iqqdResponse)).thenReturn(List.of(iqqd));
+        when(mockStockMapper.toEtfs(vhylResponse)).thenReturn(List.of(vhyl));
+
+        List<Stock> german = marketDataAdapter.fetchEtfs(new StockFilter(List.of("Germany"), List.of(), List.of("IQQD")))
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+        List<Stock> dutch = marketDataAdapter.fetchEtfs(new StockFilter(List.of("Netherlands"), List.of(), List.of("VHYL")))
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(german).extracting(Stock::symbol).containsExactly("IQQD");
+        assertThat(dutch).extracting(Stock::symbol).containsExactly("VHYL");
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), eq("Germany"), eq("IQQD"));
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), eq("Netherlands"), eq("VHYL"));
+        verify(mockClient, never()).getEtfs(eq(apiKey), isNull(), isNull(), isNull());
     }
 
     private TwelveDataStockResponse createMockApiResponse() {

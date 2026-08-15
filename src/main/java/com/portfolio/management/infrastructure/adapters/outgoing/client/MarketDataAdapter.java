@@ -55,19 +55,23 @@ public class MarketDataAdapter implements MarketDataPort {
     private Uni<List<Stock>> fetchListings(StockFilter filter, boolean includeStocks) {
         List<String> countries = normalizeFilterList(filter.countries());
         List<String> exchanges = normalizeFilterList(filter.exchanges());
+        // Full stock refresh ignores symbol filters so /stocks is not multiplied per ticker.
+        List<String> symbols = includeStocks
+                ? Collections.singletonList(null)
+                : normalizeFilterList(filter.symbols());
 
-        return Multi.createFrom().iterable(buildCombinations(countries, exchanges))
+        return Multi.createFrom().iterable(buildCombinations(countries, exchanges, symbols))
                 .onItem().transformToUniAndConcatenate(combination -> fetchCombination(combination, includeStocks))
                 .collect().asList()
                 .map(this::deduplicateStocks);
     }
 
     private Uni<List<Stock>> fetchCombination(FilterCombination combination, boolean includeStocks) {
-        Uni<List<Stock>> etfs = client.getEtfs(apiKey, combination.exchange(), combination.country())
+        Uni<List<Stock>> etfs = client.getEtfs(apiKey, combination.exchange(), combination.country(), combination.symbol())
                 .map(stockMapper::toEtfs)
                 .invoke(fetched -> Log.infof(
-                        "Fetched %d ETFs for exchange=%s country=%s",
-                        fetched.size(), combination.exchange(), combination.country()));
+                        "Fetched %d ETFs for symbol=%s exchange=%s country=%s",
+                        fetched.size(), combination.symbol(), combination.exchange(), combination.country()));
 
         if (!includeStocks) {
             return etfs;
@@ -95,11 +99,13 @@ public class MarketDataAdapter implements MarketDataPort {
         return values;
     }
 
-    private List<FilterCombination> buildCombinations(List<String> countries, List<String> exchanges) {
+    private List<FilterCombination> buildCombinations(List<String> countries, List<String> exchanges, List<String> symbols) {
         List<FilterCombination> combinations = new ArrayList<>();
         for (String country : countries) {
             for (String exchange : exchanges) {
-                combinations.add(new FilterCombination(exchange, country));
+                for (String symbol : symbols) {
+                    combinations.add(new FilterCombination(exchange, country, symbol));
+                }
             }
         }
         return combinations;
@@ -116,5 +122,5 @@ public class MarketDataAdapter implements MarketDataPort {
         return new ArrayList<>(uniqueStocks.values());
     }
 
-    private record FilterCombination(String exchange, String country) {}
+    private record FilterCombination(String exchange, String country, String symbol) {}
 }

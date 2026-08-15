@@ -175,7 +175,7 @@ class AdminResourceTest {
         when(fetchAndStoreStockDataUseCase.fetchAndStoreEtfs(any(StockFilter.class)))
             .thenReturn(Uni.createFrom().item(successResult));
 
-        Response result = adminResource.fetchEtfs(List.of("Germany"), List.of("XETR"))
+        Response result = adminResource.fetchEtfs(List.of("Germany"), List.of("XETR"), List.of("IQQD"))
                 .subscribe()
                 .withSubscriber(UniAssertSubscriber.create())
                 .awaitItem()
@@ -193,5 +193,6 @@ class AdminResourceTest {
         verify(fetchAndStoreStockDataUseCase, never()).fetchAndStoreStocks(any(StockFilter.class));
         assertEquals(List.of("Germany"), filterCaptor.getValue().countries());
         assertEquals(List.of("XETR"), filterCaptor.getValue().exchanges());
+        assertEquals(List.of("IQQD"), filterCaptor.getValue().symbols());
     }
 }
