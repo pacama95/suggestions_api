@@ -249,4 +249,50 @@ class StockMapperTest {
         assertThat(result.cusip()).isNull();
         assertThat(result.dataVersion()).isEqualTo(1L);
     }
+
+    @Test
+    void shouldDefaultBlankEtfTypeToEtf() {
+        var etf = new TwelveDataStockResponse.TwelveDataStock(
+                "IQQD",
+                "iShares STOXX Global Select Dividend 100 UCITS ETF (DE)",
+                "EUR",
+                "XETR",
+                "XETR",
+                "Germany",
+                null,
+                null,
+                null,
+                "DE000A0F5UH1",
+                null
+        );
+        var response = new TwelveDataStockResponse(List.of(etf), "ok");
+
+        List<Stock> result = stockMapper.toEtfs(response);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().symbol()).isEqualTo("IQQD");
+        assertThat(result.getFirst().exchange()).isEqualTo("XETR");
+        assertThat(result.getFirst().type()).isEqualTo("ETF");
+    }
+
+    @Test
+    void shouldPreserveExplicitEtfType() {
+        var etf = new TwelveDataStockResponse.TwelveDataStock(
+                "VHYL",
+                "Vanguard FTSE All-World High Dividend Yield UCITS ETF",
+                "EUR",
+                "Euronext",
+                "XAMS",
+                "Netherlands",
+                "ETF",
+                null,
+                null,
+                null,
+                null
+        );
+
+        List<Stock> result = stockMapper.toEtfs(new TwelveDataStockResponse(List.of(etf), "ok"));
+
+        assertThat(result.getFirst().type()).isEqualTo("ETF");
+    }
 }

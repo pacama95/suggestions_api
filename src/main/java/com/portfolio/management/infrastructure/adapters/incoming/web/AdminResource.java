@@ -41,4 +41,24 @@ public class AdminResource implements AdminController {
                     return Response.serverError().build();
                 });
     }
+
+    @Override
+    public Uni<Response> fetchEtfs(List<String> countries, List<String> exchanges) {
+        StockFilter filter = new StockFilter(
+                countries != null ? countries : List.of(),
+                exchanges != null ? exchanges : List.of()
+        );
+
+        return fetchAndStoreStockDataUseCase.fetchAndStoreEtfs(filter)
+                .map(result -> switch (result) {
+                    case FetchAndStoreStockDataUseCase.Result.Success success ->
+                            Response.ok(Map.of("success", success.success(), "message", success.message(), "recordsProcessed", success.recordsProcessed())).build();
+                    case FetchAndStoreStockDataUseCase.Result.Error error ->
+                            Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(Map.of("error", error.message())).build();
+                })
+                .onFailure().recoverWithItem(throwable -> {
+                    Log.errorf(throwable, "Failed to fetch and store ETFs.");
+                    return Response.serverError().build();
+                });
+    }
 }

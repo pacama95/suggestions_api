@@ -60,6 +60,25 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
                 });
     }
 
+    @Override
+    public Uni<Result> fetchAndStoreEtfs(StockFilter filter) {
+        StockFilter effectiveFilter = mergeWithDefaults(filter);
+        Log.infof("Fetching and appending ETFs with filter: %s", effectiveFilter);
+
+        return marketDataPort.fetchEtfs(effectiveFilter)
+                .onItem().transformToUni(etfs -> {
+                    if (etfs.isEmpty()) {
+                        return Uni.createFrom().item(() ->
+                                new Result.Success(false, 0, "No ETFs fetched from market data provider"));
+                    }
+                    return appendListings(etfs, "ETFs");
+                })
+                .onFailure().recoverWithItem(throwable -> {
+                    Log.errorf(throwable, "Failed to fetch and store ETFs");
+                    return new Result.Error("Failed: " + throwable.getMessage());
+                });
+    }
+
     StockFilter mergeWithDefaults(StockFilter requestFilter) {
         List<String> countries = hasValues(requestFilter.countries())
                 ? requestFilter.countries()
@@ -81,6 +100,14 @@ public class FetchAndStoreStockDataService implements FetchAndStoreStockDataUseC
                 .flatMap(ignored -> popularityPort.recomputeStockScores())
                 .flatMap(ignored -> stockPort.analyzeTable())
                 .replaceWith(() -> new Result.Success(true, fetchedStocks.size(), "Successfully fetched and stored stocks"));
+    }
+
+    private Uni<Result> appendListings(List<Stock> listings, String label) {
+        Log.infof("Appending %d %s without clearing the existing catalog", listings.size(), label);
+        return storeStocksInBatches(listings)
+                .flatMap(ignored -> stockPort.analyzeTable())
+                .replaceWith(() -> new Result.Success(
+                        true, listings.size(), "Successfully fetched and stored " + label));
     }
 
     private Uni<Long> clearExistingStocks() {

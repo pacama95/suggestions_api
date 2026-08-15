@@ -34,25 +34,58 @@ public class MarketDataAdapter implements MarketDataPort {
 
     @Override
     public Uni<List<Stock>> fetchStocks(StockFilter filter) {
-        Log.infof("Fetching available stocks from market data provider with filter: %s", filter);
+        Log.infof("Fetching available stocks and ETFs from market data provider with filter: %s", filter);
+        return fetchListings(filter, true)
+                .invoke(stocks -> Log.infof(
+                        "%d stocks and ETFs fetched from market data provider after deduplication", stocks.size()))
+                .onFailure().invoke(throwable ->
+                        Log.errorf(throwable, "Failed to fetch stocks from TwelveData API"));
+    }
 
+    @Override
+    public Uni<List<Stock>> fetchEtfs(StockFilter filter) {
+        Log.infof("Fetching available ETFs from market data provider with filter: %s", filter);
+        return fetchListings(filter, false)
+                .invoke(etfs -> Log.infof(
+                        "%d ETFs fetched from market data provider after deduplication", etfs.size()))
+                .onFailure().invoke(throwable ->
+                        Log.errorf(throwable, "Failed to fetch ETFs from TwelveData API"));
+    }
+
+    private Uni<List<Stock>> fetchListings(StockFilter filter, boolean includeStocks) {
         List<String> countries = normalizeFilterList(filter.countries());
         List<String> exchanges = normalizeFilterList(filter.exchanges());
 
         return Multi.createFrom().iterable(buildCombinations(countries, exchanges))
-                .onItem().transformToUniAndConcatenate(combination ->
-                        client.getStocks(apiKey, combination.exchange(), combination.country())
-                                .map(stockMapper::toStocks)
-                                .invoke(stocks -> Log.infof(
-                                        "Fetched %d stocks for exchange=%s country=%s",
-                                        stocks.size(), combination.exchange(), combination.country()))
-                )
+                .onItem().transformToUniAndConcatenate(combination -> fetchCombination(combination, includeStocks))
                 .collect().asList()
-                .map(this::deduplicateStocks)
+                .map(this::deduplicateStocks);
+    }
+
+    private Uni<List<Stock>> fetchCombination(FilterCombination combination, boolean includeStocks) {
+        Uni<List<Stock>> etfs = client.getEtfs(apiKey, combination.exchange(), combination.country())
+                .map(stockMapper::toEtfs)
+                .invoke(fetched -> Log.infof(
+                        "Fetched %d ETFs for exchange=%s country=%s",
+                        fetched.size(), combination.exchange(), combination.country()));
+
+        if (!includeStocks) {
+            return etfs;
+        }
+
+        return client.getStocks(apiKey, combination.exchange(), combination.country())
+                .map(stockMapper::toStocks)
                 .invoke(stocks -> Log.infof(
-                        "%d stocks fetched from market data provider after deduplication", stocks.size()))
-                .onFailure().invoke(throwable ->
-                        Log.errorf(throwable, "Failed to fetch stocks from TwelveData API"));
+                        "Fetched %d stocks for exchange=%s country=%s",
+                        stocks.size(), combination.exchange(), combination.country()))
+                .flatMap(stocks -> etfs.map(etfList -> concat(stocks, etfList)));
+    }
+
+    private static List<Stock> concat(List<Stock> first, List<Stock> second) {
+        List<Stock> combined = new ArrayList<>(first.size() + second.size());
+        combined.addAll(first);
+        combined.addAll(second);
+        return combined;
     }
 
     private List<String> normalizeFilterList(List<String> values) {

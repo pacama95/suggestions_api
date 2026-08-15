@@ -19,7 +19,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,10 @@ class MarketDataAdapterTest {
     @BeforeEach
     void setUp() {
         marketDataAdapter = new MarketDataAdapter(mockClient, mockStockMapper, apiKey);
+        var emptyEtfs = new TwelveDataStockResponse(List.of(), "ok");
+        lenient().when(mockClient.getEtfs(eq(apiKey), nullable(String.class), nullable(String.class)))
+                .thenReturn(Uni.createFrom().item(emptyEtfs));
+        lenient().when(mockStockMapper.toEtfs(emptyEtfs)).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -244,6 +250,49 @@ class MarketDataAdapterTest {
         verify(mockClient).getStocks(eq(apiKey), eq("NASDAQ"), eq("United States"));
     }
 
+    @Test
+    @DisplayName("Should merge ETFs into a full stock fetch and keep distinct listings")
+    void shouldMergeEtfsIntoFullStockFetch() {
+        var stocksResponse = createMockApiResponse();
+        var etfsResponse = new TwelveDataStockResponse(List.of(), "etfs");
+        Stock iqqd = createEtf("IQQD", "iShares STOXX Global Select Dividend 100 UCITS ETF (DE)", "XETR", "XETR", "Germany");
+
+        when(mockClient.getStocks(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(stocksResponse));
+        when(mockStockMapper.toStocks(stocksResponse)).thenReturn(List.of(createStock("AAPL", "Apple Inc.")));
+        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
+        when(mockStockMapper.toEtfs(etfsResponse)).thenReturn(List.of(iqqd));
+
+        List<Stock> result = marketDataAdapter.fetchStocks(StockFilter.empty())
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(result).extracting(Stock::symbol).containsExactly("AAPL", "IQQD");
+        verify(mockClient).getStocks(eq(apiKey), isNull(), isNull());
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull());
+    }
+
+    @Test
+    @DisplayName("Should fetch only ETFs without calling the stocks endpoint")
+    void shouldFetchOnlyEtfsWithoutCallingStocks() {
+        var etfsResponse = new TwelveDataStockResponse(List.of(), "etfs");
+        Stock vhyl = createEtf("VHYL", "Vanguard FTSE All-World High Dividend Yield UCITS ETF", "Euronext", "XAMS", "Netherlands");
+
+        when(mockClient.getEtfs(eq(apiKey), isNull(), isNull())).thenReturn(Uni.createFrom().item(etfsResponse));
+        when(mockStockMapper.toEtfs(etfsResponse)).thenReturn(List.of(vhyl));
+
+        List<Stock> result = marketDataAdapter.fetchEtfs(StockFilter.empty())
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .getItem();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().symbol()).isEqualTo("VHYL");
+        assertThat(result.getFirst().type()).isEqualTo("ETF");
+        verify(mockClient).getEtfs(eq(apiKey), isNull(), isNull());
+        verify(mockClient, never()).getStocks(eq(apiKey), nullable(String.class), nullable(String.class));
+    }
+
     private TwelveDataStockResponse createMockApiResponse() {
         var stock1 = new TwelveDataStockResponse.TwelveDataStock(
                 "AAPL", "Apple Inc.", "USD", "NASDAQ", "XNAS",
@@ -285,6 +334,25 @@ class MarketDataAdapterTest {
                 "ESXXXX",
                 "US1234567890",
                 "123456789",
+                1L,
+                0.0
+        );
+    }
+
+    private Stock createEtf(String symbol, String name, String exchange, String micCode, String country) {
+        return new Stock(
+                null,
+                symbol,
+                name,
+                "EUR",
+                exchange,
+                micCode,
+                country,
+                "ETF",
+                null,
+                null,
+                null,
+                null,
                 1L,
                 0.0
         );

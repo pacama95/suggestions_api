@@ -9,4 +9,6 @@ import java.util.List;
 public interface MarketDataPort {
 
     Uni<List<Stock>> fetchStocks(StockFilter filter);
+
+    Uni<List<Stock>> fetchEtfs(StockFilter filter);
 }

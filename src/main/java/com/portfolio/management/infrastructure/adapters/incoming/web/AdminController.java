@@ -80,4 +80,47 @@ public interface AdminController {
     })
     Uni<Response> fetchStocks(@QueryParam("country") List<String> countries,
                                 @QueryParam("exchange") List<String> exchanges);
+
+    @POST
+    @Path("/fetch-etfs")
+    @Operation(
+        summary = "Fetch ETFs from TwelveData API and append them to the catalog",
+        description = "Administrative endpoint to ingest ETF listings from the TwelveData API " +
+                     "without deleting existing stocks. " +
+                     "Supports optional country and exchange filters (repeatable query params). " +
+                     "When omitted, configured defaults from application.properties are used; " +
+                     "if no defaults are set, all available ETFs are fetched. " +
+                     "A full POST /admin/fetch-stocks refresh already includes ETFs."
+    )
+    @APIResponses({
+        @APIResponse(
+            responseCode = "200",
+            description = "ETFs fetched and stored successfully",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Success response",
+                    summary = "Successful ETF data import",
+                    description = "Response when ETFs are successfully fetched and appended",
+                    value = """
+                    {
+                      "success": true,
+                      "message": "Successfully fetched and stored ETFs",
+                      "recordsProcessed": 4200
+                    }
+                    """
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "500",
+            description = "Failed to fetch ETFs",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    Uni<Response> fetchEtfs(@QueryParam("country") List<String> countries,
+                            @QueryParam("exchange") List<String> exchanges);
 }

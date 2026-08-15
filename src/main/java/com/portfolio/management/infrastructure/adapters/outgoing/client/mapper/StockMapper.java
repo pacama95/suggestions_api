@@ -32,6 +32,21 @@ public interface StockMapper {
     }
 
     /**
+     * Maps Twelve Data {@code /etfs} payloads. That endpoint omits {@code type}, which
+     * downstream suggestion consumers require, so blank types become {@code ETF}.
+     */
+    default List<Stock> toEtfs(TwelveDataStockResponse twelveDataStockResponse) {
+        return toStocks(twelveDataStockResponse).stream()
+                .map(stock -> {
+                    if (stock.type() != null && !stock.type().isBlank()) {
+                        return stock;
+                    }
+                    return stock.withType("ETF");
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Maps individual TwelveDataStock to Stock domain object
      * Uses cleaned symbol and name values and sets default dataVersion
      * ID is set to null as external API doesn't provide database IDs

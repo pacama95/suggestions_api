@@ -51,6 +51,15 @@ public record Stock(
         }
         return symbol;
     }
+
+    /**
+     * Returns a copy with {@code type} replaced. Twelve Data's ETF payload omits type,
+     * so ingestion defaults it to {@code ETF} without mutating other fields.
+     */
+    public Stock withType(String type) {
+        return new Stock(id, symbol, name, currency, exchange, micCode, country, type,
+                figiCode, cfiCode, isin, cusip, dataVersion, popularityScore);
+    }
     
     /**
      * Checks if this stock has all required basic information

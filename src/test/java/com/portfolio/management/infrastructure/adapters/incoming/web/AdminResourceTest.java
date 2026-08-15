@@ -164,4 +164,34 @@ class AdminResourceTest {
 
         verify(fetchAndStoreStockDataUseCase, times(1)).fetchAndStoreStocks(any(StockFilter.class));
     }
+
+    @Test
+    @DisplayName("Should append ETFs without using the full stock refresh")
+    void testFetchEtfs_Success() {
+        FetchAndStoreStockDataUseCase.Result successResult = new FetchAndStoreStockDataUseCase.Result.Success(
+            true, 4, "Successfully fetched and stored ETFs"
+        );
+
+        when(fetchAndStoreStockDataUseCase.fetchAndStoreEtfs(any(StockFilter.class)))
+            .thenReturn(Uni.createFrom().item(successResult));
+
+        Response result = adminResource.fetchEtfs(List.of("Germany"), List.of("XETR"))
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .awaitItem()
+                .getItem();
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseEntity = (Map<String, Object>) result.getEntity();
+        assertEquals(true, responseEntity.get("success"));
+        assertEquals(4, responseEntity.get("recordsProcessed"));
+
+        ArgumentCaptor<StockFilter> filterCaptor = ArgumentCaptor.forClass(StockFilter.class);
+        verify(fetchAndStoreStockDataUseCase).fetchAndStoreEtfs(filterCaptor.capture());
+        verify(fetchAndStoreStockDataUseCase, never()).fetchAndStoreStocks(any(StockFilter.class));
+        assertEquals(List.of("Germany"), filterCaptor.getValue().countries());
+        assertEquals(List.of("XETR"), filterCaptor.getValue().exchanges());
+    }
 }

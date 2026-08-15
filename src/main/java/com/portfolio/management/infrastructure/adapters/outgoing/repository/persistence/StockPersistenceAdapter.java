@@ -37,6 +37,8 @@ public class StockPersistenceAdapter implements StockPort {
     }
 
     @Override
+    @CacheInvalidateAll(cacheName = "stock-suggestions")
+    @CacheInvalidateAll(cacheName = "stock-advanced-search")
     @WithTransaction
     public Uni<StocksBatchProcessingResult> saveBatch(List<Stock> stocks) {
         return Uni.createFrom().item(() -> stocks.stream()

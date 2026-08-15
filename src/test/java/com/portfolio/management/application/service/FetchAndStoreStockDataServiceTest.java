@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -136,8 +137,42 @@ class FetchAndStoreStockDataServiceTest {
                 .contains("API unavailable");
     }
 
+    @Test
+    @DisplayName("Should append ETFs without clearing the existing catalog")
+    void shouldAppendEtfsWithoutClearingTheExistingCatalog() {
+        List<Stock> fetchedEtfs = List.of(createEtf("IQQD"), createEtf("VHYL"));
+        StockFilter requestFilter = new StockFilter(List.of("Germany"), List.of("XETR"));
+
+        when(marketDataPort.fetchEtfs(any(StockFilter.class)))
+                .thenReturn(Uni.createFrom().item(fetchedEtfs));
+        when(stockPort.saveBatch(any())).thenReturn(Uni.createFrom().item(new StocksBatchProcessingResult(2, 0)));
+        when(stockPort.analyzeTable()).thenReturn(Uni.createFrom().voidItem());
+
+        FetchAndStoreStockDataUseCase.Result result = stockDataService.fetchAndStoreEtfs(requestFilter)
+                .subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .awaitItem()
+                .getItem();
+
+        assertThat(result).isInstanceOf(FetchAndStoreStockDataUseCase.Result.Success.class);
+        FetchAndStoreStockDataUseCase.Result.Success success = (FetchAndStoreStockDataUseCase.Result.Success) result;
+        assertThat(success.success()).isTrue();
+        assertThat(success.recordsProcessed()).isEqualTo(2);
+
+        verify(marketDataPort).fetchEtfs(requestFilter);
+        verify(stockPort).saveBatch(fetchedEtfs);
+        verify(stockPort).analyzeTable();
+        verify(stockPort, never()).deleteAll();
+        verify(popularityPort, never()).recomputeStockScores();
+    }
+
     private Stock createStock(String symbol) {
         return Stock.of(symbol, symbol + " Inc.", "USD", "NASDAQ", "XNAS",
                 "United States", "Common Stock", null, null, null, null, 1L);
+    }
+
+    private Stock createEtf(String symbol) {
+        return Stock.of(symbol, symbol + " ETF", "EUR", "XETR", "XETR",
+                "Germany", "ETF", null, null, null, null, 1L);
     }
 }
